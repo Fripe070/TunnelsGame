@@ -1,8 +1,12 @@
+#region
+
 using System;
 using System.Diagnostics.CodeAnalysis;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
+using Random = UnityEngine.Random;
+
+#endregion
 
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(NavMeshAgent))]
@@ -14,7 +18,7 @@ public class EnemyController : MonoBehaviour
     public float maxGoalDistance = 100f;
     
     private NavMeshAgent _agent;
-    private GameObject _player = null;
+    private GameObject _player;
     private bool _chasingPlayer;
 
     // Start is called before the first frame update
@@ -52,7 +56,7 @@ public class EnemyController : MonoBehaviour
         
         
         // Randomly go to the player's position, so we don't get too far away from them
-        if (UnityEngine.Random.Range(0, 100) < 5)
+        if (Random.Range(0, 100) < 5)
         {
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation // Gets called rarely so idc
             Debug.Log("Randomly going to player");
@@ -92,7 +96,7 @@ public class EnemyController : MonoBehaviour
     }
 
     private static Vector3 RandomNavSphere(Vector3 origin, float distance, int layerMask) {
-        Vector3 randomDirection = UnityEngine.Random.insideUnitSphere * distance;
+        Vector3 randomDirection = Random.insideUnitSphere * distance;
         randomDirection += origin;
         NavMesh.SamplePosition(randomDirection, out NavMeshHit navHit, distance, layerMask);
         return navHit.position;

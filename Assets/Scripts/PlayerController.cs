@@ -1,7 +1,11 @@
-﻿using StarterAssets;
+﻿#region
+
+using InputSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+
+#endregion
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
@@ -75,8 +79,8 @@ public class PlayerController : MonoBehaviour
 	private float _speed;
 	private float _rotationVelocity;
 	private float _verticalVelocity;
-	private float _terminalVelocity = 53.0f;
-	
+	private const float TerminalVelocity = 53.0f;
+
 	// stamina
 	private float _stamina = 1.0f;
 	private bool _exhausted;
@@ -270,7 +274,7 @@ public class PlayerController : MonoBehaviour
 		}
 
 		// apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
-		if (_verticalVelocity < _terminalVelocity)
+		if (_verticalVelocity < TerminalVelocity)
 		{
 			_verticalVelocity += Gravity * Time.deltaTime;
 		}

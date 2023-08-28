@@ -1,14 +1,19 @@
+#region
+
 using UnityEngine;
+using Random = System.Random;
+
+#endregion
 
 [RequireComponent(typeof(AudioSource))]
 public class WhiteNoise : MonoBehaviour
 {
     private AudioSource _audioSource;
-    private System.Random _random;
+    private Random _random;
 
     void Start()
     {
-        _random = new System.Random();
+        _random = new Random();
         _audioSource = GetComponent<AudioSource>();
         _audioSource.clip = AudioClip.Create("WhiteNoise", 44100 * 2, 1, 44100, true, OnAudioRead);
         _audioSource.loop = true;
