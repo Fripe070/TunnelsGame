@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Diagnostics.CodeAnalysis;
 using InputSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -292,6 +293,7 @@ public class PlayerController : MonoBehaviour
 		Application.Quit();
 	}
 	
+	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
 	private void OnDrawGizmosSelected()
 	{
 		Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
