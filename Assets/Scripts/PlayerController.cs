@@ -159,7 +159,7 @@ public class PlayerController : MonoBehaviour
 	{
 		_stamina = Mathf.Clamp01(_stamina);
 		staminaSlider.value = _stamina;
-		staminaSlider.gameObject.SetActive(true); // _stamina < 1
+		staminaSlider.gameObject.SetActive(_stamina < 1);
 
 		if (_exhausted && _stamina >= 1) _exhausted = false;
 		
