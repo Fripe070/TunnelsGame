@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(NavMeshAgent))]
@@ -11,7 +10,8 @@ public class EnemyController : MonoBehaviour
 {
     public float defaultSpeed = 3f;
     public float chaseSpeed = 6f;
-    public AudioSource audioSource;
+    public float maxViewDistance = 6f;
+    public float maxGoalDistance = 100f;
     
     private NavMeshAgent _agent;
     private GameObject _player = null;
@@ -28,7 +28,7 @@ public class EnemyController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Audio();
+        _agent.speed = _chasingPlayer ? chaseSpeed : defaultSpeed;
         
         // Prioritize chasing the player over anything else
         if (CanSee(_player))
@@ -50,32 +50,23 @@ public class EnemyController : MonoBehaviour
         // For non-chase behaviour, we wait for the current navigation to be completed first
         if (!HasArrived()) return;
         
+        
+        // Randomly go to the player's position, so we don't get too far away from them
+        if (UnityEngine.Random.Range(0, 100) < 5)
+        {
+            // ReSharper disable once Unity.PerformanceCriticalCodeInvocation // Gets called rarely so idc
+            Debug.Log("Randomly going to player");
+            _agent.SetDestination(_player.transform.position);
+            return;
+        }
+        
         // Wander around
-        _agent.SetDestination(RandomNavSphere(transform.position, 100, -1));
+        _agent.SetDestination(RandomNavSphere(transform.position, maxGoalDistance, -1));
     }
 
     private void StartChase()
     {
-        _agent.speed = chaseSpeed;
-    }
-
-    private void Audio()
-    {
-        
-    }
-    
-
-    public void FixedUpdate()
-    {
-        if (_chasingPlayer || !HasArrived()) return;
-        
-        // Randomly chase the player anyways
-        if (CanSee(_player) && UnityEngine.Random.Range(0, 100) < 5)
-        {
-            Debug.Log("Randomly chasing player");
-            _chasingPlayer = true;
-            _agent.SetDestination(_player.transform.position);
-        }
+        //TODO: Add notice sound
     }
 
     private bool CanSee(GameObject target)
@@ -85,16 +76,12 @@ public class EnemyController : MonoBehaviour
         Vector3 direction = targetPosition - position;
         float distance = direction.magnitude;
         
+        if (distance > maxViewDistance) return false;
+        
         var ray = new Ray(position, direction); 
         Physics.Raycast(ray, out RaycastHit hit, distance);
         
         bool canSee = hit.transform == target.transform;
-        
-        if (Selection.Contains (gameObject)) Debug.DrawRay(
-            position, 
-            hit.point - position, 
-            canSee ? Color.green : Color.red);
-        
         return canSee;
     }
     
@@ -106,11 +93,8 @@ public class EnemyController : MonoBehaviour
 
     private static Vector3 RandomNavSphere(Vector3 origin, float distance, int layerMask) {
         Vector3 randomDirection = UnityEngine.Random.insideUnitSphere * distance;
-        
         randomDirection += origin;
-        
         NavMesh.SamplePosition(randomDirection, out NavMeshHit navHit, distance, layerMask);
-        
         return navHit.position;
     }
     
@@ -122,25 +106,40 @@ public class EnemyController : MonoBehaviour
             player.Die();
         }
     }
-    
-    
+
     [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
     private void OnDrawGizmos()
     {
-        // Unity complains that it's not assigned if I don't do this
         if (!Application.isPlaying) return;
-        
         Vector3 position = transform.position;
         
-        // Towards destination
-        Debug.DrawRay(position, _agent.destination - position, Color.blue);
-        
         // Agro state
-        Gizmos.color = _chasingPlayer ? Color.green : Color.gray;
+        if (CanSee(_player)) Gizmos.color = Color.red;
+        else if (_chasingPlayer) Gizmos.color = Color.yellow;
+        else if (_agent.hasPath) Gizmos.color = Color.blue;
+        else Gizmos.color = Color.gray;
         Gizmos.DrawSphere(new Vector3(
             position.x, 
             position.y + transform.localScale.y / 2,
             position.z
         ), (float)(Math.Max(transform.localScale.x, transform.localScale.z) / 2 + 0.05));
+    }
+    
+    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying) return;
+        Vector3 position = transform.position;
+        
+        // Towards destination
+        Debug.DrawRay(position, _agent.destination - position, Color.blue);
+        
+        // View distance
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(position, maxViewDistance);
+        
+        // Goal distance
+        Gizmos.color = Color.gray;
+        Gizmos.DrawWireSphere(position, maxGoalDistance);
     }
 }

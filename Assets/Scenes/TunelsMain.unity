@@ -307,7 +307,7 @@ GameObject:
   - component: {fileID: 54836753}
   - component: {fileID: 54836754}
   m_Layer: 0
-  m_Name: Audio Source
+  m_Name: WhiteNoise
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -341,7 +341,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 0.5
-  m_Pitch: 1
+  m_Pitch: 0.08
   Loop: 1
   Mute: 0
   Spatialize: 0
@@ -1501,9 +1501,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e9445320420d04b8a692f0db0e818c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultSpeed: 10
+  defaultSpeed: 3
   chaseSpeed: 4.5
-  audioSource: {fileID: 54836753}
+  maxViewDistance: 20
+  maxGoalDistance: 100
 --- !u!195 &1713350830
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1824,12 +1825,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55919ac34a26952479f3fc91f777b2fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MoveSpeed: 4
+  WalkSpeed: 4
   SprintSpeed: 7
+  ExhaustedSpeed: 2
   RotationSpeed: 2
   SpeedChangeRate: 10
-  StaminaDrainRate: 0.1
-  StaminaGainRate: 0.1
+  StaminaDrainRate: 0.25
+  StaminaGainRate: 0.2
+  ExhaustedRegenMultiplier: 0.8
+  normalStaminaColor: {r: 0.7137255, g: 1, b: 0.53333336, a: 1}
+  exhaustedStaminaColor: {r: 0.7019608, g: 0.7019608, b: 0.7019608, a: 1}
   JumpHeight: 1.2
   Gravity: -20
   JumpTimeout: 0.1
