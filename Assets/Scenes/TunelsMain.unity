@@ -1525,7 +1525,7 @@ MonoBehaviour:
   defaultSpeed: 3
   chaseSpeed: 4.5
   maxViewDistance: 20
-  maxGoalDistance: 100
+  maxGoalDistance: 25
 --- !u!195 &1713350830
 NavMeshAgent:
   m_ObjectHideFlags: 0
