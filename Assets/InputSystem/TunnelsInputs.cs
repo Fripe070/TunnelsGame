@@ -1,10 +1,18 @@
+#region
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+#endregion
+
 namespace InputSystem
 {
-	public class StarterAssetsInputs : MonoBehaviour
+	public class TunnelsInputs : MonoBehaviour
 	{
+		//TODO: Figure out ow to use inputs from different objects
+		// THis might be of use:
+		// https://github.com/UnityTechnologies/open-project-1/tree/devlogs/3-input
+		
 		[Header("Character Input Values")]
 		public Vector2 move;
 		public Vector2 look;

@@ -1,4 +1,4 @@
-﻿#region
+﻿#region Imports
 
 using System.Diagnostics.CodeAnalysis;
 using InputSystem;
@@ -32,10 +32,8 @@ public class PlayerController : MonoBehaviour
 	public float StaminaGainRate = 0.1f;
 	[Tooltip("How much slower the player should regain stamina when exhausted")]
 	public float ExhaustedRegenMultiplier = 0.8f;
-	
 	public Color normalStaminaColor = Color.green;
 	public Color exhaustedStaminaColor = Color.grey;
-	
 
 	[Space(10)]
 	[Tooltip("The height the player can jump")]
@@ -91,7 +89,7 @@ public class PlayerController : MonoBehaviour
 	private float _fallTimeoutDelta;
     
 	private CharacterController _controller;
-	private StarterAssetsInputs _input;
+	private TunnelsInputs _input;
 	private GameObject _mainCamera;
 	
 	private void Awake()
@@ -106,7 +104,7 @@ public class PlayerController : MonoBehaviour
 	private void Start()
 	{
 		_controller = GetComponent<CharacterController>();
-		_input = GetComponent<StarterAssetsInputs>();
+		_input = GetComponent<TunnelsInputs>();
 		_staminaFill = staminaSlider.fillRect.GetComponent<Image>();
 
 		// reset our timeouts on start
