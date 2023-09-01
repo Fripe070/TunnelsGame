@@ -19,6 +19,7 @@ namespace InputSystem
 		public bool jump;
 		public bool sprint;
 		public bool flashlight;
+		public bool interact;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -26,6 +27,8 @@ namespace InputSystem
 		[Header("Mouse Cursor Settings")]
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
+		
+		private bool _isMouseDown = true;
 
 		public void OnMove(InputValue value)
 		{
@@ -54,6 +57,11 @@ namespace InputSystem
 		{
 			FlashlightInput(value.isPressed);
 		}
+		
+		public void OnInteract(InputValue value)
+		{
+			InteractInput(value.isPressed);
+		}
 
 		public void MoveInput(Vector2 newMoveDirection)
 		{
@@ -78,8 +86,12 @@ namespace InputSystem
 		public void FlashlightInput(bool newFlashlightState)
 		{
 			if (!newFlashlightState) return;
-            
 			flashlight ^= true;
+		}
+
+		public void InteractInput(bool newInteractState)
+		{
+			interact = newInteractState;
 		}
 		
 		private void OnApplicationFocus(bool hasFocus)

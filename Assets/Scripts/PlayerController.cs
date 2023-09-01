@@ -2,6 +2,8 @@
 
 using System.Diagnostics.CodeAnalysis;
 using InputSystem;
+using Interactions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -12,6 +14,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerController : MonoBehaviour
 {
+	#region Fields
 	[Header("Player")]
 	[Tooltip("Move speed of the character in m/s")]
 	public float WalkSpeed = 4.0f;
@@ -70,6 +73,12 @@ public class PlayerController : MonoBehaviour
 	public Light flashlight;
 	public Slider staminaSlider;
 	private Image _staminaFill;
+	public TextMeshProUGUI interactionText;
+
+	[Header("Interactions")] 
+	public float interactionDistance;
+	public float interactionRadius = 0.1f;
+	public LayerMask interactionLayerMask;
 
 	// cinemachine
 	private float _cinemachineTargetPitch;
@@ -91,6 +100,7 @@ public class PlayerController : MonoBehaviour
 	private CharacterController _controller;
 	private TunnelsInputs _input;
 	private GameObject _mainCamera;
+	#endregion
 	
 	private void Awake()
 	{
@@ -125,6 +135,8 @@ public class PlayerController : MonoBehaviour
 	private void LateUpdate()
 	{
 		CameraRotation();
+		// We need the camera rotation
+		Interact();
 	}
 
 	private void GroundedCheck()
@@ -137,21 +149,19 @@ public class PlayerController : MonoBehaviour
 
 	private void CameraRotation()
 	{
-		// if there is an input
-		if (_input.look.sqrMagnitude >= 0.01f)
-		{
-			_cinemachineTargetPitch += _input.look.y * RotationSpeed;
-			_rotationVelocity = _input.look.x * RotationSpeed;
+		if (!(_input.look.sqrMagnitude >= 0.01f)) return;
+		
+		_cinemachineTargetPitch += _input.look.y * RotationSpeed;
+		_rotationVelocity = _input.look.x * RotationSpeed;
 
-			// clamp our pitch rotation
-			_cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
+		// clamp our pitch rotation
+		_cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
 
-			// Update Cinemachine camera target pitch
-			CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
+		// Update Cinemachine camera target pitch
+		CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
 
-			// rotate the player left and right
-			transform.Rotate(Vector3.up * _rotationVelocity);
-		}
+		// rotate the player left and right
+		transform.Rotate(Vector3.up * _rotationVelocity);
 	}
 
 	private void StaminaUpdate()
@@ -290,8 +300,29 @@ public class PlayerController : MonoBehaviour
 	{
 		Application.Quit();
 	}
-	
-	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
+
+	private void Interact()
+	{
+		interactionText.text = "";
+		
+		var hitColliders = new Collider[1];
+		Vector3 spherePosition = CinemachineCameraTarget.transform.position;
+		spherePosition += interactionDistance * CinemachineCameraTarget.transform.forward;
+		Physics.OverlapSphereNonAlloc(spherePosition, interactionRadius, hitColliders, interactionLayerMask);
+		
+		if (hitColliders.Length < 1 || hitColliders[0] == null) return;
+		var interactible = hitColliders[0].GetComponent<IInteractible>();
+		if (interactible == null) return;
+        
+		interactionText.text = interactible.InteractionText;
+		if (_input.interact)
+		{
+			interactible.Interact(this);
+		}
+		_input.interact = false;
+	}
+    
+	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
 	private void OnDrawGizmosSelected()
 	{
 		Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
@@ -302,5 +333,13 @@ public class PlayerController : MonoBehaviour
 
 		// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
 		Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
+        
+		Gizmos.color = Color.red;
+		
+		Vector3 spherePosition = CinemachineCameraTarget.transform.position;
+		spherePosition += interactionDistance * CinemachineCameraTarget.transform.forward;
+		Gizmos.DrawWireSphere(
+			spherePosition,
+			interactionRadius);
 	}
 }
