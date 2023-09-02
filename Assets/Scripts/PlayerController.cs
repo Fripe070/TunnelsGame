@@ -1,8 +1,10 @@
 ﻿#region Imports
 
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using InputSystem;
 using Interactions;
+using items;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -143,8 +145,8 @@ public class PlayerController : MonoBehaviour
 	private void GroundedCheck()
 	{
 		// set sphere position, with offset
-		var position = transform.position;
-		Vector3 spherePosition = new Vector3(position.x, position.y - GroundedOffset, position.z);
+		Vector3 position = transform.position;
+		var spherePosition = new Vector3(position.x, position.y - GroundedOffset, position.z);
 		Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
 	}
 
@@ -202,10 +204,10 @@ public class PlayerController : MonoBehaviour
 		if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
 		// a reference to the players current horizontal velocity
-		var velocity = _controller.velocity;
+		Vector3 velocity = _controller.velocity;
 		float currentHorizontalSpeed = new Vector3(velocity.x, 0.0f, velocity.z).magnitude;
 
-		float speedOffset = 0.1f;
+		const float speedOffset = 0.1f;
 		float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
 		// accelerate or decelerate to target speed

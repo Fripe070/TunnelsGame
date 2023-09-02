@@ -6,7 +6,7 @@ namespace Interactions
     {
         public GameObject hinge;
         public float openAngle = 90;
-        public bool open = false;
+        public bool open;
         
         public string InteractionText => open ? "Close" : "Open";
 
