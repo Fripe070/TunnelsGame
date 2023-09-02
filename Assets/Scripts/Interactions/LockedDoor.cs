@@ -4,10 +4,10 @@ namespace Interactions
 {
     public class LockedDoor : MonoBehaviour, IInteractible
     {
-        // public GameObject hinge;
-        // public float openAngle = 90;
-        public bool locked = false;
-        public bool open = false;
+        public GameObject hinge;
+        public float openAngle = 90;
+        public bool locked = true;
+        public bool open;
         
         public string InteractionText
         {
@@ -18,13 +18,12 @@ namespace Interactions
             }
         }
 
-        public void Interact(PlayerController player)
+        public new void Interact(PlayerController player)
         {
-            //TODO: Implement keys and locking
+            //TODO: Implement keys
             if (locked) return;
             open = !open;
-            enabled = open;
-            // transform.RotateAround(hinge.transform.position, Vector3.up, open ? openAngle : -openAngle);
+            transform.RotateAround(hinge.transform.position, hinge.transform.up, open ? openAngle : -openAngle);
         }
     }
 }

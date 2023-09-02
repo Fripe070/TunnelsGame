@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using InputSystem;
 using Interactions;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -306,9 +307,15 @@ public class PlayerController : MonoBehaviour
 		interactionText.text = "";
 		
 		var hitColliders = new Collider[1];
-		Vector3 spherePosition = CinemachineCameraTarget.transform.position;
-		spherePosition += interactionDistance * CinemachineCameraTarget.transform.forward;
-		Physics.OverlapSphereNonAlloc(spherePosition, interactionRadius, hitColliders, interactionLayerMask);
+		Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
+		Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
+		
+		Physics.OverlapCapsuleNonAlloc(
+			cameraPosition,
+			endPointPosition,
+			interactionRadius,
+			hitColliders,
+			interactionLayerMask);
 		
 		if (hitColliders.Length < 1 || hitColliders[0] == null) return;
 		var interactible = hitColliders[0].GetComponent<IInteractible>();
@@ -325,21 +332,50 @@ public class PlayerController : MonoBehaviour
 	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
 	private void OnDrawGizmosSelected()
 	{
+		Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
+		
+		// Grounded check sphere
 		Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
 		Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
-
 		if (Grounded) Gizmos.color = transparentGreen;
 		else Gizmos.color = transparentRed;
 
 		// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
 		Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
         
-		Gizmos.color = Color.red;
-		
-		Vector3 spherePosition = CinemachineCameraTarget.transform.position;
-		spherePosition += interactionDistance * CinemachineCameraTarget.transform.forward;
-		Gizmos.DrawWireSphere(
-			spherePosition,
-			interactionRadius);
+		Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
+		DrawWireCapsule(cameraPosition, endPointPosition, interactionRadius, Color.red);
+	}
+	
+	public static void DrawWireCapsule(Vector3 pos1, Vector3 pos2, float radius, Color color = default)
+	{
+		if (color != default) Handles.color = color;
+ 
+		Vector3 forward = pos2 - pos1;
+		Quaternion rot = Quaternion.LookRotation(forward);
+		var pointOffset = radius/2f;
+		var length = forward.magnitude;
+		var center2 = new Vector3(0f,0,length);
+		Matrix4x4 angleMatrix = Matrix4x4.TRS(pos1, rot, Handles.matrix.lossyScale);
+       
+		using (new Handles.DrawingScope(angleMatrix))
+		{
+			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, radius);
+			Handles.DrawWireArc(Vector3.zero, Vector3.up, Vector3.left * pointOffset, -180f, radius);
+			Handles.DrawWireArc(Vector3.zero, Vector3.left, Vector3.down * pointOffset, -180f, radius);
+			Handles.DrawWireDisc(center2, Vector3.forward, radius);
+			Handles.DrawWireArc(center2, Vector3.up, Vector3.right * pointOffset, -180f, radius);
+			Handles.DrawWireArc(center2, Vector3.left, Vector3.up * pointOffset, -180f, radius);
+           
+			DrawLine(radius,0f,length);
+			DrawLine(-radius,0f,length);
+			DrawLine(0f,radius,length);
+			DrawLine(0f,-radius,length);
+		}
+	}
+ 
+	private static void DrawLine(float arg1,float arg2,float forward)
+	{
+		Handles.DrawLine(new Vector3(arg1, arg2, 0f), new Vector3(arg1, arg2, forward));
 	}
 }
