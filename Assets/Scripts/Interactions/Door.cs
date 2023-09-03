@@ -1,8 +1,12 @@
-﻿using UnityEngine;
+﻿#region Imports
+
+using UnityEngine;
+
+#endregion
 
 namespace Interactions
 {
-    public class Door : MonoBehaviour, IInteractible
+    public class Door : MonoBehaviour, IInteractive
     {
         public GameObject hinge;
         public float openAngle = 90;

@@ -7,6 +7,7 @@ using Interactions;
 using items;
 using TMPro;
 using UnityEditor;
+using UnityEditor.PackageManager.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -91,6 +92,7 @@ public class PlayerController : MonoBehaviour
 	private float _rotationVelocity;
 	private float _verticalVelocity;
 	private const float TerminalVelocity = 53.0f;
+	private bool _interacted;
 
 	// stamina
 	private float _stamina = 1.0f;
@@ -301,11 +303,16 @@ public class PlayerController : MonoBehaviour
 
 	public void Die()
 	{
+		Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
 		Application.Quit();
 	}
 
 	private void Interact()
 	{
+		// Avoids interacting each frame the input is held
+		var interacting = _input.interact;
+		_input.interact = false;
+		
 		interactionText.text = "";
 		
 		var hitColliders = new Collider[1];
@@ -320,15 +327,14 @@ public class PlayerController : MonoBehaviour
 			interactionLayerMask);
 		
 		if (hitColliders.Length < 1 || hitColliders[0] == null) return;
-		var interactible = hitColliders[0].GetComponent<IInteractible>();
-		if (interactible == null) return;
+		var interactive = hitColliders[0].GetComponent<IInteractive>();
+		if (interactive == null) return;
         
-		interactionText.text = interactible.InteractionText;
-		if (_input.interact)
+		interactionText.text = interactive.InteractionText;
+		if (interacting)
 		{
-			interactible.Interact(this);
+			interactive.Interact(this);
 		}
-		_input.interact = false;
 	}
     
 	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only

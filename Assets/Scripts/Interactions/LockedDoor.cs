@@ -1,9 +1,12 @@
-﻿using System;
+﻿#region Imports
+
 using UnityEngine;
+
+#endregion
 
 namespace Interactions
 {
-    public class LockedDoor : MonoBehaviour, IInteractible
+    public class LockedDoor : MonoBehaviour, IInteractive
     {
         public GameObject key;
         public bool spawnKeyOnFirstInteract;
@@ -34,7 +37,6 @@ namespace Interactions
 
         public void Interact(PlayerController player)
         {
-            //TODO: Implement keys
             if (locked) return;
             open = !open;
             transform.RotateAround(hinge.transform.position, hinge.transform.up, open ? openAngle : -openAngle);

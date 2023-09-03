@@ -1,6 +1,6 @@
 ﻿namespace Interactions
 {
-    public interface IInteractible
+    public interface IInteractive
     {
         public string InteractionText { get; }
         

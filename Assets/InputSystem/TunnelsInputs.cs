@@ -27,8 +27,6 @@ namespace InputSystem
 		[Header("Mouse Cursor Settings")]
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
-		
-		private bool _isMouseDown = true;
 
 		public void OnMove(InputValue value)
 		{

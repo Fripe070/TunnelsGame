@@ -1,5 +1,9 @@
-﻿using Interactions;
+﻿#region Imports
+
+using Interactions;
 using UnityEngine;
+
+#endregion
 
 namespace items
 {

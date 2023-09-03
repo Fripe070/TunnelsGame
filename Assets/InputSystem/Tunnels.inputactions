@@ -52,7 +52,7 @@
                 },
                 {
                     "name": "Interact",
-                    "type": "PassThrough",
+                    "type": "Button",
                     "id": "84bdb29a-08d4-4d0e-8dac-cc487e6758cc",
                     "expectedControlType": "Button",
                     "processors": "",
@@ -277,6 +277,17 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0e9b4d17-805e-44f4-9301-3b8c2b122284",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "Interact",
                     "isComposite": false,
                     "isPartOfComposite": false
