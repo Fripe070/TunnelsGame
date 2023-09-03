@@ -32,6 +32,10 @@ public class PlayerController : MonoBehaviour
 	public float SpeedChangeRate = 10.0f;
     
 	[Space(10)]
+	public float MaxHealth = 100f;
+	private float _health;
+    
+	[Space(10)]
 	[Tooltip("How much stamina should be drained every second of sprinting")]
 	public float StaminaDrainRate = 0.1f;
 	[Tooltip("How much stamina should be regenerated every second of not springing")]
@@ -76,6 +80,7 @@ public class PlayerController : MonoBehaviour
 	public Light flashlight;
 	public Slider staminaSlider;
 	private Image _staminaFill;
+	public Slider healthSlider;
 	public TextMeshProUGUI interactionText;
 
 	[Header("Interactions")] 
@@ -121,6 +126,8 @@ public class PlayerController : MonoBehaviour
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
         _fallTimeoutDelta = FallTimeout;
+        
+        _health = MaxHealth;
     }
 
     private void Update()
@@ -286,9 +293,22 @@ public class PlayerController : MonoBehaviour
         if (lfAngle > 360f) lfAngle -= 360f;
         return Mathf.Clamp(lfAngle, lfMin, lfMax);
     }
+    
+    public void Damage(float amount)
+	{
+		_health -= amount;
+        if (_health <= 0) Die();
+        
+        healthSlider.value = _health / MaxHealth;
+	}
 
     public void Die()
     {
+	    if (Application.isEditor)
+	    {
+		    Debug.Log("Player died");
+		    return;
+	    };
         Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
         Application.Quit();
     }

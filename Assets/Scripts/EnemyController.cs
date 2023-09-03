@@ -16,6 +16,7 @@ public class EnemyController : MonoBehaviour
     public float chaseSpeed = 6f;
     public float maxViewDistance = 6f;
     public float maxGoalDistance = 100f;
+    public float damage = 20f;
 
     private NavMeshAgent _agent;
     private bool _chasingPlayer;
@@ -106,12 +107,12 @@ public class EnemyController : MonoBehaviour
     }
 #endif
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (other.gameObject.CompareTag("Player"))
         {
             var player = other.gameObject.GetComponent<PlayerController>();
-            player.Die();
+            player.Damage(damage * Time.fixedDeltaTime);
         }
     }
 

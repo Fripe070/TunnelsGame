@@ -9,6 +9,7 @@ namespace DeathZones
     public class TeleportZone : Zone
     {
         public Vector3 destination;
+        public float damage;
 
         public void OnDrawGizmos()
         {
@@ -18,10 +19,13 @@ namespace DeathZones
 
         public override void OnTriggerEnter(Collider other)
         {
-            var controller = other.GetComponent<CharacterController>();
-            if (controller != null) controller.enabled = false;
+            var charController = other.GetComponent<CharacterController>();
+            if (charController != null) charController.enabled = false;
             other.transform.position = destination;
-            if (controller != null) controller.enabled = true;
+            if (charController != null) charController.enabled = true;
+            
+            var playerController = other.GetComponent<PlayerController>();
+            if (playerController != null) playerController.Damage(damage);
         }
     }
 }
