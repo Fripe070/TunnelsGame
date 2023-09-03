@@ -9,10 +9,10 @@ public class PlatformController : MonoBehaviour
 {
     public bool isUp = true;
     public float moveSpeed = 1f;
-    
+
     [SerializeField] private float moveDownBy;
     private float _upHeight;
-    
+
     private void Awake()
     {
         _upHeight = transform.position.y;
@@ -37,7 +37,7 @@ public class PlatformController : MonoBehaviour
     {
         Vector3 scale = transform.localScale * 1.01f; // Removes z-fighting on the sides
         scale.y = transform.localScale.y;
-        
+
         Gizmos.color = isUp ? Color.grey : Color.green;
         Gizmos.DrawCube(transform.position + Vector3.down * moveDownBy, scale);
     }

@@ -7,100 +7,96 @@ using UnityEngine.InputSystem;
 
 namespace InputSystem
 {
-	public class TunnelsInputs : MonoBehaviour
-	{
-		//TODO: Figure out ow to use inputs from different objects
-		// THis might be of use:
-		// https://github.com/UnityTechnologies/open-project-1/tree/devlogs/3-input
-		
-		[Header("Character Input Values")]
-		public Vector2 move;
-		public Vector2 look;
-		public bool jump;
-		public bool sprint;
-		public bool flashlight;
-		public bool interact;
+    public class TunnelsInputs : MonoBehaviour
+    {
+        //TODO: Figure out ow to use inputs from different objects
+        // THis might be of use:
+        // https://github.com/UnityTechnologies/open-project-1/tree/devlogs/3-input
 
-		[Header("Movement Settings")]
-		public bool analogMovement;
+        [Header("Character Input Values")] 
+        public Vector2 move;
+        public Vector2 look;
+        public bool jump;
+        public bool sprint;
+        public bool flashlight;
+        public bool interact;
 
-		[Header("Mouse Cursor Settings")]
-		public bool cursorLocked = true;
-		public bool cursorInputForLook = true;
+        [Header("Movement Settings")] 
+        public bool analogMovement;
+        
+        [Header("Mouse Cursor Settings")] 
+        public bool cursorLocked = true;
+        public bool cursorInputForLook = true;
 
-		public void OnMove(InputValue value)
-		{
-			MoveInput(value.Get<Vector2>());
-		}
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            SetCursorState(cursorLocked);
+        }
 
-		public void OnLook(InputValue value)
-		{
-			if(cursorInputForLook)
-			{
-				LookInput(value.Get<Vector2>());
-			}
-		}
+        public void OnMove(InputValue value)
+        {
+            MoveInput(value.Get<Vector2>());
+        }
 
-		public void OnJump(InputValue value)
-		{
-			JumpInput(value.isPressed);
-		}
+        public void OnLook(InputValue value)
+        {
+            if (cursorInputForLook) LookInput(value.Get<Vector2>());
+        }
 
-		public void OnSprint(InputValue value)
-		{
-			SprintInput(value.isPressed);
-		}
+        public void OnJump(InputValue value)
+        {
+            JumpInput(value.isPressed);
+        }
 
-		public void OnFlashlight(InputValue value)
-		{
-			FlashlightInput(value.isPressed);
-		}
-		
-		public void OnInteract(InputValue value)
-		{
-			InteractInput(value.isPressed);
-		}
+        public void OnSprint(InputValue value)
+        {
+            SprintInput(value.isPressed);
+        }
 
-		public void MoveInput(Vector2 newMoveDirection)
-		{
-			move = newMoveDirection;
-		} 
+        public void OnFlashlight(InputValue value)
+        {
+            FlashlightInput(value.isPressed);
+        }
 
-		public void LookInput(Vector2 newLookDirection)
-		{
-			look = newLookDirection;
-		}
+        public void OnInteract(InputValue value)
+        {
+            InteractInput(value.isPressed);
+        }
 
-		public void JumpInput(bool newJumpState)
-		{
-			jump = newJumpState;
-		}
+        public void MoveInput(Vector2 newMoveDirection)
+        {
+            move = newMoveDirection;
+        }
 
-		public void SprintInput(bool newSprintState)
-		{
-			sprint = newSprintState;
-		}
+        public void LookInput(Vector2 newLookDirection)
+        {
+            look = newLookDirection;
+        }
 
-		public void FlashlightInput(bool newFlashlightState)
-		{
-			if (!newFlashlightState) return;
-			flashlight ^= true;
-		}
+        public void JumpInput(bool newJumpState)
+        {
+            jump = newJumpState;
+        }
 
-		public void InteractInput(bool newInteractState)
-		{
-			interact = newInteractState;
-		}
-		
-		private void OnApplicationFocus(bool hasFocus)
-		{
-			SetCursorState(cursorLocked);
-		}
+        public void SprintInput(bool newSprintState)
+        {
+            sprint = newSprintState;
+        }
 
-		private void SetCursorState(bool newState)
-		{
-			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
-		}
-	}
-	
+        public void FlashlightInput(bool newFlashlightState)
+        {
+            if (!newFlashlightState) return;
+            flashlight ^= true;
+        }
+
+        public void InteractInput(bool newInteractState)
+        {
+            interact = newInteractState;
+        }
+
+        private void SetCursorState(bool newState)
+        {
+            Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+        }
+    }
 }

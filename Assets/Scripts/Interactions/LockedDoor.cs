@@ -14,12 +14,12 @@ namespace Interactions
         public float openAngle = 90;
         public bool locked = true;
         public bool open;
-        
+
         private void Start()
         {
             if (spawnKeyOnFirstInteract) key.SetActive(false);
         }
-        
+
         public string InteractionText
         {
             get
@@ -29,7 +29,7 @@ namespace Interactions
                     key.SetActive(true);
                     spawnKeyOnFirstInteract = false;
                 }
-                
+
                 if (locked) return key != null ? "Locked\nRequires a key" : "Locked";
                 return open ? "Close" : "Open";
             }

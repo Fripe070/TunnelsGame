@@ -105,286 +105,272 @@ public class PlayerController : MonoBehaviour
 	private TunnelsInputs _input;
 	private GameObject _mainCamera;
 	#endregion
-	
-	private void Awake()
-	{
-		// get a reference to our main camera
-		if (_mainCamera == null)
-		{
-			_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-		}
-	}
-
-	private void Start()
-	{
-		_controller = GetComponent<CharacterController>();
-		_input = GetComponent<TunnelsInputs>();
-		_staminaFill = staminaSlider.fillRect.GetComponent<Image>();
-
-		// reset our timeouts on start
-		_jumpTimeoutDelta = JumpTimeout;
-		_fallTimeoutDelta = FallTimeout;
-	}
-
-	private void Update()
-	{
-		JumpAndGravity();
-		GroundedCheck();
-		StaminaUpdate();
-		Move();
-        
-		if (flashlight.enabled != _input.flashlight) flashlight.enabled = _input.flashlight;
-	}
-
-	private void LateUpdate()
-	{
-		CameraRotation();
-		// We need the camera rotation
-		Interact();
-	}
-
-	private void GroundedCheck()
-	{
-		// set sphere position, with offset
-		Vector3 position = transform.position;
-		var spherePosition = new Vector3(position.x, position.y - GroundedOffset, position.z);
-		Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
-	}
-
-	private void CameraRotation()
-	{
-		if (!(_input.look.sqrMagnitude >= 0.01f)) return;
-		
-		_cinemachineTargetPitch += _input.look.y * RotationSpeed;
-		_rotationVelocity = _input.look.x * RotationSpeed;
-
-		// clamp our pitch rotation
-		_cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
-
-		// Update Cinemachine camera target pitch
-		CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
-
-		// rotate the player left and right
-		transform.Rotate(Vector3.up * _rotationVelocity);
-	}
-
-	private void StaminaUpdate()
-	{
-		_stamina = Mathf.Clamp01(_stamina);
-		staminaSlider.value = _stamina;
-		staminaSlider.gameObject.SetActive(_stamina < 1);
-
-		if (_exhausted && _stamina >= 1) _exhausted = false;
-		
-		_staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
-		
-		if (_stamina <= 0) _exhausted = true;
-
-		if (!CanSprint()) _stamina += Time.deltaTime * StaminaGainRate;
-		else if (_exhausted) _stamina += Time.deltaTime * StaminaGainRate * ExhaustedRegenMultiplier;
-	}
-
-	private bool CanSprint()
-	{
-		return _input.sprint && _input.move != Vector2.zero && !_exhausted;
-	}
     
-	private void Move()
-	{
-		float targetSpeed = WalkSpeed;
-		if (_exhausted) targetSpeed = ExhaustedSpeed;
-		else if (CanSprint())
-		{
-			_stamina -= Time.deltaTime * StaminaDrainRate;
-			targetSpeed = SprintSpeed;
-		}
+    private void Awake()
+    {
+        // get a reference to our main camera
+        if (_mainCamera == null) _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+    }
 
-		// a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
-		// note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-		// if there is no input, set the target speed to 0
-		if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+    private void Start()
+    {
+        _controller = GetComponent<CharacterController>();
+        _input = GetComponent<TunnelsInputs>();
+        _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
 
-		// a reference to the players current horizontal velocity
-		Vector3 velocity = _controller.velocity;
-		float currentHorizontalSpeed = new Vector3(velocity.x, 0.0f, velocity.z).magnitude;
+        // reset our timeouts on start
+        _jumpTimeoutDelta = JumpTimeout;
+        _fallTimeoutDelta = FallTimeout;
+    }
 
-		const float speedOffset = 0.1f;
-		float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
+    private void Update()
+    {
+        JumpAndGravity();
+        GroundedCheck();
+        StaminaUpdate();
+        Move();
 
-		// accelerate or decelerate to target speed
-		if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
-		{
-			// creates curved result rather than a linear one giving a more organic speed change
-			// note T in Lerp is clamped, so we don't need to clamp our speed
-			_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
+        if (flashlight.enabled != _input.flashlight) flashlight.enabled = _input.flashlight;
+    }
 
-			// round speed to 3 decimal places
-			_speed = Mathf.Round(_speed * 1000f) / 1000f;
-		}
-		else
-		{
-			_speed = targetSpeed;
-		}
+    private void LateUpdate()
+    {
+        CameraRotation();
+        // We need the camera rotation
+        Interact();
+    }
 
-		// normalise input direction
-		Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+    private void GroundedCheck()
+    {
+        // set sphere position, with offset
+        Vector3 position = transform.position;
+        var spherePosition = new Vector3(position.x, position.y - GroundedOffset, position.z);
+        Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+    }
 
-		// note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-		// if there is a move input rotate player when the player is moving
-		if (_input.move != Vector2.zero)
-		{
-			// move
-			var transform1 = transform;
-			inputDirection = transform1.right * _input.move.x + transform1.forward * _input.move.y;
-		}
-			
-		// Footsteps
-		footstepSource.enabled = _speed > 0.1f && Grounded;
+    private void CameraRotation()
+    {
+        if (!(_input.look.sqrMagnitude >= 0.01f)) return;
 
-		// move the player
-		_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
-	}
+        _cinemachineTargetPitch += _input.look.y * RotationSpeed;
+        _rotationVelocity = _input.look.x * RotationSpeed;
 
-	private void JumpAndGravity()
-	{
-		if (Grounded)
-		{
-			// reset the fall timeout timer
-			_fallTimeoutDelta = FallTimeout;
+        // clamp our pitch rotation
+        _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
 
-			// stop our velocity dropping infinitely when grounded
-			if (_verticalVelocity < 0.0f)
-			{
-				_verticalVelocity = -2f;
-			}
+        // Update Cinemachine camera target pitch
+        CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
 
-			// Jump
-			if (_input.jump && _jumpTimeoutDelta <= 0.0f)
-			{
-				// the square root of H * -2 * G = how much velocity needed to reach desired height
-				_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-			}
+        // rotate the player left and right
+        transform.Rotate(Vector3.up * _rotationVelocity);
+    }
 
-			// jump timeout
-			if (_jumpTimeoutDelta >= 0.0f)
-			{
-				_jumpTimeoutDelta -= Time.deltaTime;
-			}
-		}
-		else
-		{
-			// reset the jump timeout timer
-			_jumpTimeoutDelta = JumpTimeout;
+    private void StaminaUpdate()
+    {
+        _stamina = Mathf.Clamp01(_stamina);
+        staminaSlider.value = _stamina;
+        staminaSlider.gameObject.SetActive(_stamina < 1);
 
-			// fall timeout
-			if (_fallTimeoutDelta >= 0.0f)
-			{
-				_fallTimeoutDelta -= Time.deltaTime;
-			}
+        if (_exhausted && _stamina >= 1) _exhausted = false;
 
-			// if we are not grounded, do not jump
-			_input.jump = false;
-		}
+        _staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
 
-		// apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
-		if (_verticalVelocity < TerminalVelocity)
-		{
-			_verticalVelocity += Gravity * Time.deltaTime;
-		}
-	}
+        if (_stamina <= 0) _exhausted = true;
 
-	private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
-	{
-		if (lfAngle < -360f) lfAngle += 360f;
-		if (lfAngle > 360f) lfAngle -= 360f;
-		return Mathf.Clamp(lfAngle, lfMin, lfMax);
-	}
+        if (!CanSprint()) _stamina += Time.deltaTime * StaminaGainRate;
+        else if (_exhausted) _stamina += Time.deltaTime * StaminaGainRate * ExhaustedRegenMultiplier;
+    }
 
-	public void Die()
-	{
-		Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
-		Application.Quit();
-	}
+    private bool CanSprint()
+    {
+        return _input.sprint && _input.move != Vector2.zero && !_exhausted;
+    }
 
-	private void Interact()
-	{
-		// Avoids interacting each frame the input is held
-		var interacting = _input.interact;
-		_input.interact = false;
-		
-		interactionText.text = "";
-		
-		var hitColliders = new Collider[1];
-		Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
-		Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
-		
-		Physics.OverlapCapsuleNonAlloc(
-			cameraPosition,
-			endPointPosition,
-			interactionRadius,
-			hitColliders,
-			interactionLayerMask);
-		
-		if (hitColliders.Length < 1 || hitColliders[0] == null) return;
-		var interactive = hitColliders[0].GetComponent<IInteractive>();
-		if (interactive == null) return;
-        
-		interactionText.text = interactive.InteractionText;
-		if (interacting)
-		{
-			interactive.Interact(this);
-		}
-	}
-    
+    private void Move()
+    {
+        var targetSpeed = WalkSpeed;
+        if (_exhausted)
+        {
+            targetSpeed = ExhaustedSpeed;
+        }
+        else if (CanSprint())
+        {
+            _stamina -= Time.deltaTime * StaminaDrainRate;
+            targetSpeed = SprintSpeed;
+        }
+
+        // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
+        // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+        // if there is no input, set the target speed to 0
+        if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+
+        // a reference to the players current horizontal velocity
+        Vector3 velocity = _controller.velocity;
+        var currentHorizontalSpeed = new Vector3(velocity.x, 0.0f, velocity.z).magnitude;
+
+        const float speedOffset = 0.1f;
+        var inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
+
+        // accelerate or decelerate to target speed
+        if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
+        {
+            // creates curved result rather than a linear one giving a more organic speed change
+            // note T in Lerp is clamped, so we don't need to clamp our speed
+            _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
+
+            // round speed to 3 decimal places
+            _speed = Mathf.Round(_speed * 1000f) / 1000f;
+        }
+        else
+        {
+            _speed = targetSpeed;
+        }
+
+        // normalise input direction
+        Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+
+        // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+        // if there is a move input rotate player when the player is moving
+        if (_input.move != Vector2.zero)
+        {
+            // move
+            Transform transform1 = transform;
+            inputDirection = transform1.right * _input.move.x + transform1.forward * _input.move.y;
+        }
+
+        // Footsteps
+        footstepSource.enabled = _speed > 0.1f && Grounded;
+
+        // move the player
+        _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) +
+                         new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+    }
+
+    private void JumpAndGravity()
+    {
+        if (Grounded)
+        {
+            // reset the fall timeout timer
+            _fallTimeoutDelta = FallTimeout;
+
+            // stop our velocity dropping infinitely when grounded
+            if (_verticalVelocity < 0.0f) _verticalVelocity = -2f;
+
+            // Jump
+            if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                // the square root of H * -2 * G = how much velocity needed to reach desired height
+                _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+
+            // jump timeout
+            if (_jumpTimeoutDelta >= 0.0f) _jumpTimeoutDelta -= Time.deltaTime;
+        }
+        else
+        {
+            // reset the jump timeout timer
+            _jumpTimeoutDelta = JumpTimeout;
+
+            // fall timeout
+            if (_fallTimeoutDelta >= 0.0f) _fallTimeoutDelta -= Time.deltaTime;
+
+            // if we are not grounded, do not jump
+            _input.jump = false;
+        }
+
+        // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
+        if (_verticalVelocity < TerminalVelocity) _verticalVelocity += Gravity * Time.deltaTime;
+    }
+
+    private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
+    {
+        if (lfAngle < -360f) lfAngle += 360f;
+        if (lfAngle > 360f) lfAngle -= 360f;
+        return Mathf.Clamp(lfAngle, lfMin, lfMax);
+    }
+
+    public void Die()
+    {
+        Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
+        Application.Quit();
+    }
+
+    private void Interact()
+    {
+        // Avoids interacting each frame the input is held
+        var interacting = _input.interact;
+        _input.interact = false;
+
+        interactionText.text = "";
+
+        var hitColliders = new Collider[1];
+        Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
+        Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
+
+        Physics.OverlapCapsuleNonAlloc(
+            cameraPosition,
+            endPointPosition,
+            interactionRadius,
+            hitColliders,
+            interactionLayerMask);
+
+        if (hitColliders.Length < 1 || hitColliders[0] == null) return;
+        var interactive = hitColliders[0].GetComponent<IInteractive>();
+        if (interactive == null) return;
+
+        interactionText.text = interactive.InteractionText;
+        if (interacting) interactive.Interact(this);
+    }
+
 #if UNITY_EDITOR
-	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
-	private void OnDrawGizmosSelected()
-	{
-		Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
-		
-		// Grounded check sphere
-		Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
-		Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
-		if (Grounded) Gizmos.color = transparentGreen;
-		else Gizmos.color = transparentRed;
+    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
+    private void OnDrawGizmosSelected()
+    {
+        Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
 
-		// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
-		Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
-        
-		Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
-		DrawWireCapsule(cameraPosition, endPointPosition, interactionRadius, Color.red);
-	}
-	
-	public static void DrawWireCapsule(Vector3 pos1, Vector3 pos2, float radius, Color color = default)
-	{
-		if (color != default) Handles.color = color;
- 
-		Vector3 forward = pos2 - pos1;
-		Quaternion rot = Quaternion.LookRotation(forward);
-		var pointOffset = radius/2f;
-		var length = forward.magnitude;
-		var center2 = new Vector3(0f,0,length);
-		Matrix4x4 angleMatrix = Matrix4x4.TRS(pos1, rot, Handles.matrix.lossyScale);
-       
-		using (new Handles.DrawingScope(angleMatrix))
-		{
-			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, radius);
-			Handles.DrawWireArc(Vector3.zero, Vector3.up, Vector3.left * pointOffset, -180f, radius);
-			Handles.DrawWireArc(Vector3.zero, Vector3.left, Vector3.down * pointOffset, -180f, radius);
-			Handles.DrawWireDisc(center2, Vector3.forward, radius);
-			Handles.DrawWireArc(center2, Vector3.up, Vector3.right * pointOffset, -180f, radius);
-			Handles.DrawWireArc(center2, Vector3.left, Vector3.up * pointOffset, -180f, radius);
-           
-			DrawLine(radius,0f,length);
-			DrawLine(-radius,0f,length);
-			DrawLine(0f,radius,length);
-			DrawLine(0f,-radius,length);
-		}
-	}
- 
-	private static void DrawLine(float arg1,float arg2,float forward)
-	{
-		Handles.DrawLine(new Vector3(arg1, arg2, 0f), new Vector3(arg1, arg2, forward));
-	}
+        // Grounded check sphere
+        var transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
+        var transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
+        if (Grounded) Gizmos.color = transparentGreen;
+        else Gizmos.color = transparentRed;
+
+        // when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
+        Gizmos.DrawSphere(
+            new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z),
+            GroundedRadius);
+
+        Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
+        DrawWireCapsule(cameraPosition, endPointPosition, interactionRadius, Color.red);
+    }
+
+    public static void DrawWireCapsule(Vector3 pos1, Vector3 pos2, float radius, Color color = default)
+    {
+        if (color != default) Handles.color = color;
+
+        Vector3 forward = pos2 - pos1;
+        Quaternion rot = Quaternion.LookRotation(forward);
+        var pointOffset = radius / 2f;
+        var length = forward.magnitude;
+        var center2 = new Vector3(0f, 0, length);
+        Matrix4x4 angleMatrix = Matrix4x4.TRS(pos1, rot, Handles.matrix.lossyScale);
+
+        using (new Handles.DrawingScope(angleMatrix))
+        {
+            Handles.DrawWireDisc(Vector3.zero, Vector3.forward, radius);
+            Handles.DrawWireArc(Vector3.zero, Vector3.up, Vector3.left * pointOffset, -180f, radius);
+            Handles.DrawWireArc(Vector3.zero, Vector3.left, Vector3.down * pointOffset, -180f, radius);
+            Handles.DrawWireDisc(center2, Vector3.forward, radius);
+            Handles.DrawWireArc(center2, Vector3.up, Vector3.right * pointOffset, -180f, radius);
+            Handles.DrawWireArc(center2, Vector3.left, Vector3.up * pointOffset, -180f, radius);
+
+            DrawLine(radius, 0f, length);
+            DrawLine(-radius, 0f, length);
+            DrawLine(0f, radius, length);
+            DrawLine(0f, -radius, length);
+        }
+    }
+
+    private static void DrawLine(float arg1, float arg2, float forward)
+    {
+        Handles.DrawLine(new Vector3(arg1, arg2, 0f), new Vector3(arg1, arg2, forward));
+    }
 #endif
 }

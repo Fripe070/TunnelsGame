@@ -11,7 +11,7 @@ public class WhiteNoise : MonoBehaviour
     private AudioSource _audioSource;
     private Random _random;
 
-    void Start()
+    private void Start()
     {
         _random = new Random();
         _audioSource = GetComponent<AudioSource>();
@@ -20,11 +20,8 @@ public class WhiteNoise : MonoBehaviour
         _audioSource.Play();
     }
 
-    void OnAudioRead(float[] data)
+    private void OnAudioRead(float[] data)
     {
-        for (int i = 0; i < data.Length; i++)
-        {
-            data[i] = (float)_random.NextDouble();
-        }
+        for (var i = 0; i < data.Length; i++) data[i] = (float)_random.NextDouble();
     }
 }
