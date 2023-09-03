@@ -1,6 +1,5 @@
-﻿#region Imports
+﻿#region
 
-using System;
 using UnityEngine;
 
 #endregion

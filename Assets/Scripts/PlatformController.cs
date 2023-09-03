@@ -1,6 +1,5 @@
-﻿#region Imports
+﻿#region
 
-using System;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 

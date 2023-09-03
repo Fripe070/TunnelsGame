@@ -1,4 +1,4 @@
-#region Imports
+#region
 
 using UnityEngine;
 using Random = System.Random;

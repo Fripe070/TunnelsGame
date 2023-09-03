@@ -1,4 +1,4 @@
-﻿#region Imports
+﻿#region
 
 using UnityEngine;
 
@@ -30,7 +30,7 @@ namespace Interactions
                     spawnKeyOnFirstInteract = false;
                 }
                 
-                if (locked) return (key != null) ? "Locked\nRequires a key" : "Locked";
+                if (locked) return key != null ? "Locked\nRequires a key" : "Locked";
                 return open ? "Close" : "Open";
             }
         }

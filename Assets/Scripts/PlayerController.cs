@@ -1,16 +1,15 @@
-﻿#region Imports
+﻿#region
 
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using InputSystem;
 using Interactions;
-using items;
 using TMPro;
-using UnityEditor;
-using UnityEditor.PackageManager.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 #endregion
 
@@ -337,6 +336,7 @@ public class PlayerController : MonoBehaviour
 		}
 	}
     
+#if UNITY_EDITOR
 	[SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
 	private void OnDrawGizmosSelected()
 	{
@@ -386,4 +386,5 @@ public class PlayerController : MonoBehaviour
 	{
 		Handles.DrawLine(new Vector3(arg1, arg2, 0f), new Vector3(arg1, arg2, forward));
 	}
+#endif
 }
