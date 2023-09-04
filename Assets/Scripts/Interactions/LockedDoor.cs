@@ -17,7 +17,7 @@ namespace Interactions
 
         private void Start()
         {
-            if (spawnKeyOnFirstInteract) key.SetActive(false);
+            if (spawnKeyOnFirstInteract && key != null) key.SetActive(false);
         }
 
         public string InteractionText

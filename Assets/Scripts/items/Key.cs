@@ -15,8 +15,7 @@ namespace items
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
-
-
+            
             doorToUnlock.locked = false;
             Destroy(gameObject);
         }
