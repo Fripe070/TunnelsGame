@@ -14,6 +14,9 @@ namespace Interactions
         public float openAngle = 90;
         public bool locked = true;
         public bool open;
+        
+        public AudioClip openDoorSound;
+        public AudioClip closeDoorSound;
 
         private void Start()
         {
@@ -24,7 +27,7 @@ namespace Interactions
         {
             get
             {
-                if (spawnKeyOnFirstInteract)
+                if (spawnKeyOnFirstInteract && key != null)
                 {
                     key.SetActive(true);
                     spawnKeyOnFirstInteract = false;
@@ -39,6 +42,8 @@ namespace Interactions
         {
             if (locked) return;
             open = !open;
+            player.playerAudioSource.PlayOneShot(open ? openDoorSound : closeDoorSound);
+            
             transform.RotateAround(hinge.transform.position, hinge.transform.up, open ? openAngle : -openAngle);
         }
     }

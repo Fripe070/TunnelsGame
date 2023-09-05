@@ -6,6 +6,7 @@ using Interactions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -76,6 +77,7 @@ public class PlayerController : MonoBehaviour
 	public float BottomClamp = -90.0f;
 
 	[Header("Objects")]
+	public AudioSource playerAudioSource;
 	public AudioSource footstepSource;
 	public Light flashlight;
 	public Slider staminaSlider;
