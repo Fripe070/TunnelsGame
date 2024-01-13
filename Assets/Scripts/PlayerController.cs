@@ -6,7 +6,6 @@ using Interactions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -197,6 +196,8 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
+	    Debug.Log(_input.move);
+	    
         var targetSpeed = WalkSpeed;
         if (_exhausted)
         {
@@ -310,7 +311,7 @@ public class PlayerController : MonoBehaviour
 	    {
 		    Debug.Log("Player died");
 		    return;
-	    };
+	    }
         Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
         Application.Quit();
     }
