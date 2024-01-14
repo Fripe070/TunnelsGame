@@ -115,15 +115,15 @@ public class PlayerController : NetworkBehaviour
         // get a reference to our main camera
         if (_mainCamera == null) _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
         
-        // if (healthSlider == null) healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
-        // if (staminaSlider == null) staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
-        // if (interactionText == null) interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
+        if (healthSlider == null) healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
+        if (staminaSlider == null) staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
+        if (interactionText == null) interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
     }
 
     private void Start()
     {
         _controller = GetComponent<CharacterController>();
-        // _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
+        _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
 
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
@@ -194,12 +194,12 @@ public class PlayerController : NetworkBehaviour
     private void StaminaUpdate()
     {
         _stamina = Mathf.Clamp01(_stamina);
-        // staminaSlider.value = _stamina;
+        staminaSlider.value = _stamina;
         // staminaSlider.gameObject.SetActive(_stamina < 1);
 
         if (_exhausted && _stamina >= 1) _exhausted = false;
 
-        // _staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
+        _staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
 
         if (_stamina <= 0) _exhausted = true;
 
@@ -315,7 +315,7 @@ public class PlayerController : NetworkBehaviour
 		_health -= amount;
         if (_health <= 0) Die();
         
-        // healthSlider.value = _health / MaxHealth;
+        healthSlider.value = _health / MaxHealth;
 	}
 
     public void Die()
@@ -331,7 +331,7 @@ public class PlayerController : NetworkBehaviour
 
     private void Interact()
     {
-        // interactionText.text = "";
+        interactionText.text = "";
 
         var hitColliders = new Collider[1];
         Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
@@ -348,7 +348,7 @@ public class PlayerController : NetworkBehaviour
         var interactive = hitColliders[0].GetComponent<IInteractive>();
         if (interactive == null) return;
 
-        // interactionText.text = interactive.InteractionText;
+        interactionText.text = interactive.InteractionText;
         if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);
     }
 
