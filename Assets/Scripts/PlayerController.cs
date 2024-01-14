@@ -1,9 +1,9 @@
 ﻿#region
 
 using System.Diagnostics.CodeAnalysis;
-using InputSystem;
 using Interactions;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -14,8 +14,7 @@ using UnityEditor;
 #endregion
 
 [RequireComponent(typeof(CharacterController))]
-[RequireComponent(typeof(PlayerInput))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
 	#region Fields
 	[Header("Player")]
@@ -108,7 +107,6 @@ public class PlayerController : MonoBehaviour
 	private float _fallTimeoutDelta;
     
 	private CharacterController _controller;
-	private TunnelsInputs _input;
 	private GameObject _mainCamera;
 	#endregion
     
@@ -116,13 +114,16 @@ public class PlayerController : MonoBehaviour
     {
         // get a reference to our main camera
         if (_mainCamera == null) _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+        
+        // if (healthSlider == null) healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
+        // if (staminaSlider == null) staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
+        // if (interactionText == null) interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
     }
 
     private void Start()
     {
         _controller = GetComponent<CharacterController>();
-        _input = GetComponent<TunnelsInputs>();
-        _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
+        // _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
 
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
@@ -131,18 +132,33 @@ public class PlayerController : MonoBehaviour
         _health = MaxHealth;
     }
 
+    private Vector2 _move;
+    private Vector2 _look;
+    
     private void Update()
     {
+	    if (!IsOwner)
+	    {
+			// Disable other players camera
+			CinemachineCameraTarget.SetActive(false);
+			
+		    return;
+	    }
+	    
+	    _move = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+	    Cursor.lockState = CursorLockMode.Locked;
+	    
         JumpAndGravity();
         GroundedCheck();
         StaminaUpdate();
         Move();
-
-        if (flashlight.enabled != _input.flashlight) flashlight.enabled = _input.flashlight;
+        
+        if (Input.GetKeyDown(KeyCode.F)) flashlight.enabled = !flashlight.enabled;
     }
 
     private void LateUpdate()
     {
+	    if (!IsOwner) return;
         CameraRotation();
         // We need the camera rotation
         Interact();
@@ -158,10 +174,12 @@ public class PlayerController : MonoBehaviour
 
     private void CameraRotation()
     {
-        if (!(_input.look.sqrMagnitude >= 0.01f)) return;
+	    _look = new Vector2(Input.GetAxis("Mouse X"), -Input.GetAxis("Mouse Y"));
+	    
+        if (_look.sqrMagnitude < 0.01f) return;
 
-        _cinemachineTargetPitch += _input.look.y * RotationSpeed;
-        _rotationVelocity = _input.look.x * RotationSpeed;
+        _cinemachineTargetPitch += _look.y * RotationSpeed;
+        _rotationVelocity = _look.x * RotationSpeed;
 
         // clamp our pitch rotation
         _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
@@ -176,12 +194,12 @@ public class PlayerController : MonoBehaviour
     private void StaminaUpdate()
     {
         _stamina = Mathf.Clamp01(_stamina);
-        staminaSlider.value = _stamina;
-        staminaSlider.gameObject.SetActive(_stamina < 1);
+        // staminaSlider.value = _stamina;
+        // staminaSlider.gameObject.SetActive(_stamina < 1);
 
         if (_exhausted && _stamina >= 1) _exhausted = false;
 
-        _staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
+        // _staminaFill.color = _exhausted ? exhaustedStaminaColor : normalStaminaColor;
 
         if (_stamina <= 0) _exhausted = true;
 
@@ -191,13 +209,11 @@ public class PlayerController : MonoBehaviour
 
     private bool CanSprint()
     {
-        return _input.sprint && _input.move != Vector2.zero && !_exhausted;
+	    return Input.GetKey(KeyCode.LeftShift) && _move != Vector2.zero && !_exhausted;
     }
 
     private void Move()
     {
-	    Debug.Log(_input.move);
-	    
         var targetSpeed = WalkSpeed;
         if (_exhausted)
         {
@@ -212,21 +228,21 @@ public class PlayerController : MonoBehaviour
         // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
         // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
         // if there is no input, set the target speed to 0
-        if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+        if (_move == Vector2.zero) targetSpeed = 0.0f;
 
         // a reference to the players current horizontal velocity
         Vector3 velocity = _controller.velocity;
         var currentHorizontalSpeed = new Vector3(velocity.x, 0.0f, velocity.z).magnitude;
 
         const float speedOffset = 0.1f;
-        var inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
         // accelerate or decelerate to target speed
         if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
         {
             // creates curved result rather than a linear one giving a more organic speed change
             // note T in Lerp is clamped, so we don't need to clamp our speed
-            _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
+            // TODO: Multiplying by amplitude makes strafing faster?
+            _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * _move.magnitude, Time.deltaTime * SpeedChangeRate);
 
             // round speed to 3 decimal places
             _speed = Mathf.Round(_speed * 1000f) / 1000f;
@@ -237,19 +253,19 @@ public class PlayerController : MonoBehaviour
         }
 
         // normalise input direction
-        Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+        Vector3 inputDirection = new Vector3(_move.x, 0.0f, _move.y).normalized;
 
         // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
         // if there is a move input rotate player when the player is moving
-        if (_input.move != Vector2.zero)
+        if (_move != Vector2.zero)
         {
             // move
             Transform transform1 = transform;
-            inputDirection = transform1.right * _input.move.x + transform1.forward * _input.move.y;
+            inputDirection = transform1.right * _move.x + transform1.forward * _move.y;
         }
 
         // Footsteps
-        footstepSource.enabled = _speed > 0.1f && Grounded;
+        // footstepSource.enabled = _speed > 0.1f && Grounded;
 
         // move the player
         _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) +
@@ -267,7 +283,7 @@ public class PlayerController : MonoBehaviour
             if (_verticalVelocity < 0.0f) _verticalVelocity = -2f;
 
             // Jump
-            if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+            if (Input.GetKeyDown(KeyCode.Space) && _jumpTimeoutDelta <= 0.0f)
                 // the square root of H * -2 * G = how much velocity needed to reach desired height
                 _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
 
@@ -281,9 +297,6 @@ public class PlayerController : MonoBehaviour
 
             // fall timeout
             if (_fallTimeoutDelta >= 0.0f) _fallTimeoutDelta -= Time.deltaTime;
-
-            // if we are not grounded, do not jump
-            _input.jump = false;
         }
 
         // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
@@ -302,7 +315,7 @@ public class PlayerController : MonoBehaviour
 		_health -= amount;
         if (_health <= 0) Die();
         
-        healthSlider.value = _health / MaxHealth;
+        // healthSlider.value = _health / MaxHealth;
 	}
 
     public void Die()
@@ -318,11 +331,7 @@ public class PlayerController : MonoBehaviour
 
     private void Interact()
     {
-        // Avoids interacting each frame the input is held
-        var interacting = _input.interact;
-        _input.interact = false;
-
-        interactionText.text = "";
+        // interactionText.text = "";
 
         var hitColliders = new Collider[1];
         Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
@@ -339,8 +348,8 @@ public class PlayerController : MonoBehaviour
         var interactive = hitColliders[0].GetComponent<IInteractive>();
         if (interactive == null) return;
 
-        interactionText.text = interactive.InteractionText;
-        if (interacting) interactive.Interact(this);
+        // interactionText.text = interactive.InteractionText;
+        if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);
     }
 
 #if UNITY_EDITOR

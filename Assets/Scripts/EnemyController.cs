@@ -19,49 +19,52 @@ public class EnemyController : MonoBehaviour
     public float damage = 20f;
 
     private NavMeshAgent _agent;
-    private bool _chasingPlayer;
-    private GameObject _player;
+    private bool _isChasing;
+    private GameObject[] _players;
+    private GameObject _currentTarget;
 
     // Start is called before the first frame update
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
-        _player = GameObject.FindGameObjectWithTag("Player");
+        _players = GameObject.FindGameObjectsWithTag("Player");
+        
         _agent.speed = defaultSpeed;
     }
 
     // Update is called once per frame
     private void Update()
     {
-        _agent.speed = _chasingPlayer ? chaseSpeed : defaultSpeed;
-
+        _agent.speed = _isChasing ? chaseSpeed : defaultSpeed;
+        
         // Prioritize chasing the player over anything else
-        if (CanSee(_player))
+        if (_currentTarget != null && CanSee(_currentTarget))
         {
-            if (!_chasingPlayer) StartChase();
+            if (!_isChasing) StartChase();
 
-            _chasingPlayer = true;
-            _agent.SetDestination(_player.transform.position);
+            _isChasing = true;
+            _agent.SetDestination(_currentTarget.transform.position);
             return;
         }
+        _currentTarget = GetVisible(_players);
 
         // Stop chasing
-        if (_chasingPlayer && HasArrived())
+        if (_isChasing && HasArrived())
         {
-            _chasingPlayer = false;
+            _isChasing = false;
             _agent.speed = defaultSpeed;
         }
 
         // For non-chase behaviour, we wait for the current navigation to be completed first
         if (!HasArrived()) return;
-
-
+        
         // Randomly go to the player's position, so we don't get too far away from them
         if (Random.Range(0, 100) < 5)
         {
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation // Gets called rarely so idc
             Debug.Log("Randomly going to player");
-            _agent.SetDestination(_player.transform.position);
+            // Randomly chose a player form the list of players
+            _agent.SetDestination(_players[Random.Range(0, _players.Length)].transform.position);
             return;
         }
 
@@ -77,8 +80,8 @@ public class EnemyController : MonoBehaviour
         Vector3 position = transform.position;
 
         // Agro state
-        if (CanSee(_player)) Gizmos.color = Color.red;
-        else if (_chasingPlayer) Gizmos.color = Color.yellow;
+        if (GetVisible(_players) != null) Gizmos.color = Color.red;
+        else if (_currentTarget) Gizmos.color = Color.yellow;
         else if (_agent.hasPath) Gizmos.color = Color.blue;
         else Gizmos.color = Color.gray;
         Gizmos.DrawSphere(new Vector3(
@@ -135,6 +138,16 @@ public class EnemyController : MonoBehaviour
 
         var canSee = hit.transform == target.transform;
         return canSee;
+    }
+    
+    private GameObject GetVisible(GameObject[] targets)
+    {
+        foreach (GameObject target in targets){
+            if (CanSee(target)){
+                return target;
+            }
+        }
+        return null;
     }
 
     private bool HasArrived()
