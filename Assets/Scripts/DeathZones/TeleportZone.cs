@@ -25,7 +25,7 @@ namespace DeathZones
             if (charController != null) charController.enabled = true;
             
             var playerController = other.GetComponent<PlayerController>();
-            if (playerController != null) playerController.Damage(damage);
+            if (playerController != null) playerController.health -= damage;
         }
     }
 }

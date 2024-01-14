@@ -115,7 +115,7 @@ public class EnemyController : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             var player = other.gameObject.GetComponent<PlayerController>();
-            player.Damage(damage * Time.fixedDeltaTime);
+            player.health -= damage * Time.fixedDeltaTime;
         }
     }
 

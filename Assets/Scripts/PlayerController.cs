@@ -1,11 +1,13 @@
 ﻿#region
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Interactions;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -24,6 +26,7 @@ public class PlayerController : NetworkBehaviour
 	public float SprintSpeed = 6.0f;
 	[Tooltip("Speed of the character when exhausted in m/s")]
 	public float ExhaustedSpeed = 2.0f;
+	public Vector3 spawnPosition;
 	
 	[Tooltip("Rotation speed of the character")]
 	public float RotationSpeed = 1.0f;
@@ -32,7 +35,7 @@ public class PlayerController : NetworkBehaviour
     
 	[Space(10)]
 	public float MaxHealth = 100f;
-	private float _health;
+	public float health;
     
 	[Space(10)]
 	[Tooltip("How much stamina should be drained every second of sprinting")]
@@ -78,10 +81,10 @@ public class PlayerController : NetworkBehaviour
 	public AudioSource playerAudioSource;
 	public AudioSource footstepSource;
 	public Light flashlight;
-	public Slider staminaSlider;
+	private Slider _staminaSlider;
 	private Image _staminaFill;
-	public Slider healthSlider;
-	public TextMeshProUGUI interactionText;
+	private Slider _healthSlider;
+	private TextMeshProUGUI _interactionText;
 
 	[Header("Interactions")] 
 	public float interactionDistance;
@@ -115,21 +118,21 @@ public class PlayerController : NetworkBehaviour
         // get a reference to our main camera
         if (_mainCamera == null) _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
         
-        if (healthSlider == null) healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
-        if (staminaSlider == null) staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
-        if (interactionText == null) interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
+        if (_healthSlider == null) _healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
+        if (_staminaSlider == null) _staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
+        if (_interactionText == null) _interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
     }
 
     private void Start()
     {
         _controller = GetComponent<CharacterController>();
-        _staminaFill = staminaSlider.fillRect.GetComponent<Image>();
+        _staminaFill = _staminaSlider.fillRect.GetComponent<Image>();
 
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
         _fallTimeoutDelta = FallTimeout;
         
-        _health = MaxHealth;
+        health = MaxHealth;
     }
 
     private Vector2 _move;
@@ -141,7 +144,6 @@ public class PlayerController : NetworkBehaviour
 	    {
 			// Disable other players camera
 			CinemachineCameraTarget.SetActive(false);
-			
 		    return;
 	    }
 	    
@@ -160,9 +162,18 @@ public class PlayerController : NetworkBehaviour
     {
 	    if (!IsOwner) return;
         CameraRotation();
-        // We need the camera rotation
+        // We need the camera rotation here
         Interact();
+        
+        HealthUpdate();
     }
+    
+    private void HealthUpdate()
+	{
+		health = Mathf.Max(0, health);
+		_healthSlider.value = health / MaxHealth;
+		if (health <= 0) Die();
+	}
 
     private void GroundedCheck()
     {
@@ -194,7 +205,7 @@ public class PlayerController : NetworkBehaviour
     private void StaminaUpdate()
     {
         _stamina = Mathf.Clamp01(_stamina);
-        staminaSlider.value = _stamina;
+        _staminaSlider.value = _stamina;
         // staminaSlider.gameObject.SetActive(_stamina < 1);
 
         if (_exhausted && _stamina >= 1) _exhausted = false;
@@ -309,29 +320,21 @@ public class PlayerController : NetworkBehaviour
         if (lfAngle > 360f) lfAngle -= 360f;
         return Mathf.Clamp(lfAngle, lfMin, lfMax);
     }
-    
-    public void Damage(float amount)
-	{
-		_health -= amount;
-        if (_health <= 0) Die();
-        
-        healthSlider.value = _health / MaxHealth;
-	}
 
     public void Die()
     {
-	    if (Application.isEditor)
-	    {
-		    Debug.Log("Player died");
-		    return;
-	    }
-        Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
-        Application.Quit();
+	    Debug.Log("Player died");
+	    // Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
+        
+        health = MaxHealth;
+        _controller.enabled = false;
+        transform.position = spawnPosition;
+        _controller.enabled = true;
     }
 
     private void Interact()
     {
-        interactionText.text = "";
+        _interactionText.text = "";
 
         var hitColliders = new Collider[1];
         Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
@@ -348,7 +351,7 @@ public class PlayerController : NetworkBehaviour
         var interactive = hitColliders[0].GetComponent<IInteractive>();
         if (interactive == null) return;
 
-        interactionText.text = interactive.InteractionText;
+        _interactionText.text = interactive.InteractionText;
         if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);
     }
 
