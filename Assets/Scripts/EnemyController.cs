@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -14,6 +15,8 @@ public class EnemyController : MonoBehaviour
 {
     public float defaultSpeed = 3f;
     public float chaseSpeed = 6f;
+    public float godSpeed = 20f;
+    
     public float maxViewDistance = 6f;
     public float maxGoalDistance = 100f;
     public float damage = 20f;
@@ -21,13 +24,15 @@ public class EnemyController : MonoBehaviour
     private NavMeshAgent _agent;
     private bool _isChasing;
     private GameObject[] _players;
-    private GameObject _currentTarget;
+    private GameObject _currentTarget = null;
+    
+    [NonSerialized]
+    public GameObject GodTarget;
 
     // Start is called before the first frame update
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
-        _players = GameObject.FindGameObjectsWithTag("Player");
         
         _agent.speed = defaultSpeed;
     }
@@ -35,6 +40,14 @@ public class EnemyController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        if (GodTarget is not null)
+        {
+            _agent.speed = godSpeed;
+            _agent.SetDestination(GodTarget.transform.position);
+            return;
+        }
+        
+        _players = GameObject.FindGameObjectsWithTag("Player");
         _agent.speed = _isChasing ? chaseSpeed : defaultSpeed;
         
         // Prioritize chasing the player over anything else
@@ -59,7 +72,7 @@ public class EnemyController : MonoBehaviour
         if (!HasArrived()) return;
         
         // Randomly go to the player's position, so we don't get too far away from them
-        if (Random.Range(0, 100) < 5)
+        if (_players.Length > 0 && Random.Range(0, 100) < 5)
         {
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation // Gets called rarely so idc
             Debug.Log("Randomly going to player");
@@ -71,44 +84,6 @@ public class EnemyController : MonoBehaviour
         // Wander around
         _agent.SetDestination(RandomNavSphere(transform.position, maxGoalDistance, -1));
     }
-
-#if UNITY_EDITOR
-    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying) return;
-        Vector3 position = transform.position;
-
-        // Agro state
-        if (GetVisible(_players) != null) Gizmos.color = Color.red;
-        else if (_currentTarget) Gizmos.color = Color.yellow;
-        else if (_agent.hasPath) Gizmos.color = Color.blue;
-        else Gizmos.color = Color.gray;
-        Gizmos.DrawSphere(new Vector3(
-            position.x,
-            position.y + transform.localScale.y / 2,
-            position.z
-        ), (float)(Math.Max(transform.localScale.x, transform.localScale.z) / 2 + 0.05));
-    }
-
-    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
-    private void OnDrawGizmosSelected()
-    {
-        if (!Application.isPlaying) return;
-        Vector3 position = transform.position;
-
-        // Towards destination
-        Debug.DrawRay(position, _agent.destination - position, Color.blue);
-
-        // View distance
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(position, maxViewDistance);
-
-        // Goal distance
-        Gizmos.color = Color.gray;
-        Gizmos.DrawWireSphere(position, maxGoalDistance);
-    }
-#endif
 
     private void OnTriggerStay(Collider other)
     {
@@ -163,4 +138,42 @@ public class EnemyController : MonoBehaviour
         NavMesh.SamplePosition(randomDirection, out NavMeshHit navHit, distance, layerMask);
         return navHit.position;
     }
+
+#if UNITY_EDITOR
+    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+        Vector3 position = transform.position;
+
+        // Agro state
+        if (GetVisible(_players) != null) Gizmos.color = Color.red;
+        else if (_currentTarget) Gizmos.color = Color.yellow;
+        else if (_agent.hasPath) Gizmos.color = Color.blue;
+        else Gizmos.color = Color.gray;
+        Gizmos.DrawSphere(new Vector3(
+            position.x,
+            position.y + transform.localScale.y / 2,
+            position.z
+        ), (float)(Math.Max(transform.localScale.x, transform.localScale.z) / 2 + 0.05));
+    }
+
+    [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying) return;
+        Vector3 position = transform.position;
+
+        // Towards destination
+        Debug.DrawRay(position, _agent.destination - position, Color.blue);
+
+        // View distance
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(position, maxViewDistance);
+
+        // Goal distance
+        Gizmos.color = Color.gray;
+        Gizmos.DrawWireSphere(position, maxGoalDistance);
+    }
+#endif
 }

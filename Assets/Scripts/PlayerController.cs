@@ -6,7 +6,6 @@ using Interactions;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 #if UNITY_EDITOR
@@ -133,6 +132,12 @@ public class PlayerController : NetworkBehaviour
         _fallTimeoutDelta = FallTimeout;
         
         health = MaxHealth;
+        
+        if (!IsOwner)
+        {
+	        // Disable other players camera
+	        CinemachineCameraTarget.GetComponentInChildren<Camera>().gameObject.SetActive(false);
+        }
     }
 
     private Vector2 _move;
@@ -140,12 +145,7 @@ public class PlayerController : NetworkBehaviour
     
     private void Update()
     {
-	    if (!IsOwner)
-	    {
-			// Disable other players camera
-			CinemachineCameraTarget.SetActive(false);
-		    return;
-	    }
+	    if (!IsOwner) return;
 	    
 	    _move = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
 	    Cursor.lockState = CursorLockMode.Locked;
@@ -162,8 +162,7 @@ public class PlayerController : NetworkBehaviour
     {
 	    if (!IsOwner) return;
         CameraRotation();
-        // We need the camera rotation here
-        Interact();
+        Interact();  // We need the camera rotation here
         
         HealthUpdate();
     }
@@ -321,15 +320,20 @@ public class PlayerController : NetworkBehaviour
         return Mathf.Clamp(lfAngle, lfMin, lfMax);
     }
 
+    // ReSharper disable Unity.PerformanceAnalysis
     public void Die()
     {
 	    Debug.Log("Player died");
 	    // Application.OpenURL("https://youtu.be/dQw4w9WgXcQ");
         
         health = MaxHealth;
-        _controller.enabled = false;
         transform.position = spawnPosition;
-        _controller.enabled = true;
+    }
+    
+    [ClientRpc]
+    public void DamageClientRpc(float dmg, ClientRpcParams rpcParams = default)
+    {
+	    health -= dmg;
     }
 
     private void Interact()
@@ -347,9 +351,9 @@ public class PlayerController : NetworkBehaviour
             hitColliders,
             interactionLayerMask);
 
-        if (hitColliders.Length < 1 || hitColliders[0] == null) return;
+        if (hitColliders.Length < 1 || hitColliders[0] is null) return;
         var interactive = hitColliders[0].GetComponent<IInteractive>();
-        if (interactive == null) return;
+        if (interactive is null) return;
 
         _interactionText.text = interactive.InteractionText;
         if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);

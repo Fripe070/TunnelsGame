@@ -1,12 +1,13 @@
 ﻿#region
 
+using Unity.Netcode;
 using UnityEngine;
 
 #endregion
 
 namespace Interactions
 {
-    public class LockedDoor : MonoBehaviour, IInteractive
+    public class LockedDoor : NetworkBehaviour, IInteractive
     {
         public GameObject key;
         public bool spawnKeyOnFirstInteract;
@@ -43,7 +44,12 @@ namespace Interactions
             if (locked) return;
             open = !open;
             player.playerAudioSource.PlayOneShot(open ? openDoorSound : closeDoorSound);
-            
+            OpenServerRpc();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void OpenServerRpc()
+        {
             transform.RotateAround(hinge.transform.position, hinge.transform.up, open ? openAngle : -openAngle);
         }
     }

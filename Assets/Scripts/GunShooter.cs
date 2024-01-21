@@ -9,16 +9,17 @@ public class GunShooter : NetworkBehaviour
     private float fireRange = 100f;
     [SerializeField]
     private float damage = 10f;
-    
     [SerializeField]
     private GameObject hitEffectPrefab;
+    
+    private ulong[] _target = new ulong[1];
     
     private void FixedUpdate()
     {
         if (!IsOwner) return;
 
         // Left click
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
         {
             ShootServerRpc();
         }
@@ -27,24 +28,20 @@ public class GunShooter : NetworkBehaviour
     [ServerRpc]
     public void ShootServerRpc()
     {
-        // Raycast and see if anything is hit
-        if (!Physics.Raycast(cameraTransform.position, cameraTransform.forward, out var hit, fireRange)) return;
+        if (!Physics.Raycast(cameraTransform.position, cameraTransform.forward, out var hit, fireRange)) 
+            return;
         
 #if UNITY_EDITOR
         Debug.Log($"Hit {hit.collider.gameObject.name}");
 #endif
         
-        // If no collider, return
-        if (hit.collider == null) return;
-        
+        if (hit.collider is null) return;
         if (hit.collider.gameObject.CompareTag("Player"))
-        {
-            var playerController = hit.collider.gameObject.GetComponent<PlayerController>();
-            playerController.health -= damage;
-        }
-        
-        SpawnHitParticleClientRpc(hit.point, Quaternion.LookRotation(hit.normal));
+            hit.collider.gameObject.GetComponent<PlayerController>().DamageClientRpc(damage);
+        else 
+            SpawnHitParticleClientRpc(hit.point, Quaternion.LookRotation(hit.normal));
     }
+    
     
     [ClientRpc]
     private void SpawnHitParticleClientRpc(Vector3 hitLocation, Quaternion hitRotation)
