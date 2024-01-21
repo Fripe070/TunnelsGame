@@ -17,6 +17,13 @@ using UnityEditor;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : NetworkBehaviour
 {
+	private void OnValidate()
+	{
+		// Ensure a child with a renderer exists
+		if (GetComponentInChildren<Renderer>() is null)
+			Debug.LogError("PlayerController requires a child with a renderer");
+	}
+
 	#region Fields
 	[Header("Player")]
 	[Tooltip("Move speed of the character in m/s")]
@@ -133,11 +140,24 @@ public class PlayerController : NetworkBehaviour
         
         health = MaxHealth;
         
-        if (!IsOwner)
-        {
-	        // Disable other players camera
-	        CinemachineCameraTarget.GetComponentInChildren<Camera>().gameObject.SetActive(false);
-        }
+        // Disable other players camera
+        if (!IsOwner) CinemachineCameraTarget.GetComponentInChildren<Camera>().gameObject.SetActive(false);
+        
+        RandomiseHue();
+    }
+
+    private void RandomiseHue()
+    {
+	    // TODO: Ensure the color is the same on all clients
+	    // TODO: either by sending an RPC or by using a seed constant for the client
+	    var material = gameObject.GetComponentInChildren<Renderer>().material;
+	    
+	    float h, s, v;
+	    Color.RGBToHSV(material.color, out h, out s, out v);
+	    UnityEngine.Random.InitState(NetworkObjectId.GetHashCode());
+	    h += UnityEngine.Random.value;
+	    h %= 1;
+	    material.color = Color.HSVToRGB(h, s, v);
     }
 
     private Vector2 _move;
