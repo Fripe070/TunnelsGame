@@ -295,7 +295,8 @@ public class PlayerController : NetworkBehaviour
         }
 
         // Footsteps
-        // footstepSource.enabled = _speed > 0.1f && Grounded;
+        footstepSource.enabled = _speed > 0.1f && Grounded;
+        footstepSource.pitch = Math.Max(1f, (_speed / WalkSpeed) * 0.8f);
 
         // move the player
         _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) +
