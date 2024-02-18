@@ -20,6 +20,7 @@ public class EnemyController : MonoBehaviour
     public float maxViewDistance = 6f;
     public float maxGoalDistance = 100f;
     public float damage = 20f;
+    public AudioSource godChaseSound;
 
     private NavMeshAgent _agent;
     private bool _isChasing;
@@ -40,6 +41,7 @@ public class EnemyController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        godChaseSound.enabled = GodTarget is not null && !CanSee(GodTarget);
         if (GodTarget is not null)
         {
             _agent.speed = godSpeed;
@@ -156,6 +158,12 @@ public class EnemyController : MonoBehaviour
             position.y + transform.localScale.y / 2,
             position.z
         ), (float)(Math.Max(transform.localScale.x, transform.localScale.z) / 2 + 0.05));
+        
+        var corners = _agent.path.corners;
+        for (int i = 0; i < corners.Length - 1; i++)
+        {
+            Debug.DrawLine(corners[i], corners[i + 1], Color.green);
+        }
     }
 
     [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")]

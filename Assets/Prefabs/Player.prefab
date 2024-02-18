@@ -300,6 +300,8 @@ MonoBehaviour:
   playerAudioSource: {fileID: 3924211439910035240}
   footstepSource: {fileID: 3924211439910035240}
   flashlight: {fileID: 3924211438363521832}
+  flashlightEnabled:
+    m_InternalValue: 0
   interactionDistance: 2
   interactionRadius: 0.5
   interactionLayerMask:
@@ -426,7 +428,7 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3924211438363521834}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 10
   m_Type: 0
   m_Shape: 0

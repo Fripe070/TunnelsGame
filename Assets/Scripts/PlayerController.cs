@@ -87,6 +87,8 @@ public class PlayerController : NetworkBehaviour
 	public AudioSource playerAudioSource;
 	public AudioSource footstepSource;
 	public Light flashlight;
+	public NetworkVariable<bool> flashlightEnabled = new NetworkVariable<bool>(false);
+	
 	private Slider _staminaSlider;
 	private Image _staminaFill;
 	private Slider _healthSlider;
@@ -117,6 +119,7 @@ public class PlayerController : NetworkBehaviour
     
 	private CharacterController _controller;
 	private GameObject _mainCamera;
+	private TextMeshPro _nametag;
 	#endregion
     
     private void Awake()
@@ -127,6 +130,7 @@ public class PlayerController : NetworkBehaviour
         if (_healthSlider == null) _healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
         if (_staminaSlider == null) _staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
         if (_interactionText == null) _interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
+        if (_nametag == null) _nametag = GameObject.Find("Nametag").GetComponent<TextMeshPro>();
     }
 
     private void Start()
@@ -144,7 +148,19 @@ public class PlayerController : NetworkBehaviour
         if (!IsOwner) CinemachineCameraTarget.GetComponentInChildren<Camera>().gameObject.SetActive(false);
         
         RandomiseHue();
+        
+#if UNITY_EDITOR
+        var initialSpawn = GameObject.FindGameObjectWithTag("Spawnpoint").transform.position;
+        if (IsOwner) transform.position = initialSpawn;
+#endif
+	    // _nametag.text = NetworkManager.Singleton.LocalClient.ClientId == NetworkObjectId ? "You" : "Player " + NetworkObjectId;
     }
+
+    public override void OnNetworkSpawn()
+    {
+	    flashlightEnabled.OnValueChanged += (_, newValue) => flashlight.enabled = newValue;
+    }
+    
 
     private void RandomiseHue()
     {
@@ -175,7 +191,7 @@ public class PlayerController : NetworkBehaviour
         StaminaUpdate();
         Move();
         
-        if (Input.GetKeyDown(KeyCode.F)) flashlight.enabled = !flashlight.enabled;
+        if (Input.GetKeyDown(KeyCode.F)) flashlightEnabled.Value = !flashlightEnabled.Value;
     }
 
     private void LateUpdate()
@@ -295,7 +311,7 @@ public class PlayerController : NetworkBehaviour
         }
 
         // Footsteps
-        footstepSource.enabled = _speed > 0.1f && Grounded;
+        footstepSource.mute = !Grounded || _speed < 0.1f;
         footstepSource.pitch = Math.Max(1f, (_speed / WalkSpeed) * 0.8f);
 
         // move the player
@@ -371,13 +387,24 @@ public class PlayerController : NetworkBehaviour
             interactionRadius,
             hitColliders,
             interactionLayerMask);
+        
+#if UNITY_EDITOR
+	    // Debug.Log(hitColliders);
+		Debug.DrawLine(cameraPosition, endPointPosition, Color.red);
+#endif
 
-        if (hitColliders.Length < 1 || hitColliders[0] is null) return;
-        var interactive = hitColliders[0].GetComponent<IInteractive>();
-        if (interactive is null) return;
-
-        _interactionText.text = interactive.InteractionText;
-        if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);
+	    IInteractive interactive = null;
+	    foreach (var hitCollider in hitColliders)
+	    {
+		    if (hitCollider is null) continue;
+		    interactive = hitCollider.GetComponent<IInteractive>();
+		    if (interactive is null) continue;
+		    
+		    if (Input.GetKeyDown(KeyCode.E)) interactive.Interact(this);
+	    }
+	    
+	    if (interactive is null) return;
+		_interactionText.text = interactive.InteractionText;
     }
 
 #if UNITY_EDITOR

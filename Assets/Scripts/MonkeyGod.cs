@@ -33,8 +33,6 @@ public class MonkeyGod : MonoBehaviour
     private GameObject GetClosestVisible()
     {
         if (_players.Length == 0) return null;
-        Gizmos.color = Color.blue;
-
         GameObject closestPlayer = _players[0];
         // We don't need to take the square root, since the squared distances will be in the same order
         var closestDistance = Vector3.SqrMagnitude(transform.position - closestPlayer.transform.position);
@@ -51,8 +49,8 @@ public class MonkeyGod : MonoBehaviour
     private bool CanSee(GameObject target)
     {
         var direction = target.transform.position - transform.position;
-        // if (direction.magnitude > maxViewDistance) return false;
-        if (!Physics.Raycast(transform.position, direction, out var hit, maxViewDistance)) return false;
+        if (direction.magnitude > maxViewDistance) return false;
+        if (!Physics.Raycast(transform.position, direction.normalized, out var hit, maxViewDistance)) return false;
         return hit.collider.gameObject == target;
     }
 
@@ -63,5 +61,11 @@ public class MonkeyGod : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, _target.transform.position);
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireSphere(transform.position, maxViewDistance);
     }
 }
