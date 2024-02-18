@@ -425,6 +425,23 @@ public class PlayerController : NetworkBehaviour
 	    if (interactive is null) return;
 		_interactionText.text = interactive.InteractionText;
     }
+    
+    public bool CanSeePosition(Vector3 pos, float width = 45f, int range = 60, float proximityAwareness = -1f)
+    {
+	    Vector3 playerPosition = transform.position;
+	    Vector3 cameraPosition = CinemachineCameraTarget.transform.position;
+	    
+	    float distance = Vector3.Distance(playerPosition, pos);
+	    bool inRange = distance < range;
+	    bool isInFOV = Vector3.Angle(CinemachineCameraTarget.transform.forward, pos - cameraPosition) < width;
+	    bool isVeryClose = distance < proximityAwareness;
+	    
+	    var allButPlayerLayer = ~LayerMask.GetMask("Character");
+	    
+	    bool collidersInTheWay = Physics.Linecast(cameraPosition, pos, allButPlayerLayer, QueryTriggerInteraction.Ignore);
+	    
+	    return inRange && (isInFOV || isVeryClose) && !collidersInTheWay;
+    }
 
 #if UNITY_EDITOR
     [SuppressMessage("ReSharper", "Unity.InefficientPropertyAccess")] // Idc. It's for debugging only
