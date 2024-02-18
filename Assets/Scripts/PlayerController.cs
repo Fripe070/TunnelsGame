@@ -116,17 +116,15 @@ public class PlayerController : NetworkBehaviour
 	// timeout deltatime
 	private float _jumpTimeoutDelta;
 	private float _fallTimeoutDelta;
+
+	public bool noclip;
     
 	private CharacterController _controller;
-	private GameObject _mainCamera;
 	private TextMeshPro _nametag;
 	#endregion
     
     private void Awake()
     {
-        // get a reference to our main camera
-        if (_mainCamera == null) _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-        
         if (_healthSlider == null) _healthSlider = GameObject.Find("HealthBar").GetComponent<Slider>();
         if (_staminaSlider == null) _staminaSlider = GameObject.Find("StaminaBar").GetComponent<Slider>();
         if (_interactionText == null) _interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
@@ -186,12 +184,33 @@ public class PlayerController : NetworkBehaviour
 	    _move = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
 	    Cursor.lockState = CursorLockMode.Locked;
 	    
+	    if (Input.GetKeyDown(KeyCode.F)) flashlightEnabled.Value = !flashlightEnabled.Value;
+	    
+	    if (noclip) {
+		    Noclip();
+		    return;
+	    }
         JumpAndGravity();
         GroundedCheck();
         StaminaUpdate();
         Move();
-        
-        if (Input.GetKeyDown(KeyCode.F)) flashlightEnabled.Value = !flashlightEnabled.Value;
+    }
+
+    private void Noclip()
+    {
+	    Grounded = false;
+	    _controller.enabled = false;
+	    
+	    // Relative to cmaera forward
+	    Vector3 moveDirection = CinemachineCameraTarget.transform.forward * _move.y + CinemachineCameraTarget.transform.right * _move.x;
+	    moveDirection = moveDirection.normalized;
+	    moveDirection *= Input.GetKey(KeyCode.LeftShift) ? SprintSpeed : WalkSpeed;
+	    
+	    transform.position += moveDirection * WalkSpeed * Time.deltaTime;
+	    _controller.enabled = true;
+#if UNITY_EDITOR
+	    Debug.DrawRay(transform.position, moveDirection * 3, Color.yellow);
+#endif
     }
 
     private void LateUpdate()
