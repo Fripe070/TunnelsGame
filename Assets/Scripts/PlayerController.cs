@@ -150,6 +150,7 @@ public class PlayerController : NetworkBehaviour
 #if UNITY_EDITOR
         var initialSpawn = GameObject.FindGameObjectWithTag("Spawnpoint").transform.position;
         if (IsOwner) transform.position = initialSpawn;
+        spawnPosition = initialSpawn;
 #endif
 	    // _nametag.text = NetworkManager.Singleton.LocalClient.ClientId == NetworkObjectId ? "You" : "Player " + NetworkObjectId;
     }
