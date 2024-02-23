@@ -22,6 +22,7 @@ public class LibraryEnemy : MonoBehaviour
     
     public Color huntColor = Color.red;
     public Color scaredColor = Color.blue;
+    public AudioSource huntSound;
 
     private float _scaredTimer;
     private float _huntFreezeTimer;
@@ -56,6 +57,8 @@ public class LibraryEnemy : MonoBehaviour
         _renderer.transform.localPosition = Vector3.zero;
         _renderer.material.color = Color.white;
         _light.enabled = false;
+        if (huntSound.enabled)
+            huntSound.enabled = false;
         
         Debug.DrawLine(transform.position, _agent.destination, Color.blue);
         
@@ -68,6 +71,9 @@ public class LibraryEnemy : MonoBehaviour
         if (_isHunting || _huntFreezeTimer > 0)
         {
             _renderer.material.color = huntColor;
+            if (!huntSound.enabled)
+                _light.enabled = true;
+            huntSound.enabled = true;
             if (_huntFreezeTimer > 0)
             {
                 _agent.ResetPath();
@@ -75,7 +81,6 @@ public class LibraryEnemy : MonoBehaviour
                 _isHunting = true;
                 // Visually vibrate a bit
                 _renderer.gameObject.transform.position = transform.position + Random.insideUnitSphere * 0.1f;
-                _light.enabled = true;
                 _light.color = huntColor;
                 return;
             }
@@ -88,7 +93,8 @@ public class LibraryEnemy : MonoBehaviour
             _agent.speed = huntSpeed;
             _agent.SetDestination(_currentTarget.transform.position);
 
-            // if (!_agent.hasPath) _isHunting = false;
+            Debug.Log(_agent.path.status);
+            if (_agent.path.status == NavMeshPathStatus.PathPartial) _isHunting = false;
             return;
         }
         
