@@ -87,7 +87,8 @@ public class PlayerController : NetworkBehaviour
 	public AudioSource playerAudioSource;
 	public AudioSource footstepSource;
 	public Light flashlight;
-	public NetworkVariable<bool> flashlightEnabled = new NetworkVariable<bool>(false);
+	public NetworkVariable<bool> flashlightEnabled = new NetworkVariable<bool>( false, 
+		NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
 	
 	private Slider _staminaSlider;
 	private Image _staminaFill;
@@ -202,7 +203,7 @@ public class PlayerController : NetworkBehaviour
 	    Grounded = false;
 	    _controller.enabled = false;
 	    
-	    // Relative to cmaera forward
+	    // Relative to camera forward
 	    Vector3 moveDirection = CinemachineCameraTarget.transform.forward * _move.y + CinemachineCameraTarget.transform.right * _move.x;
 	    moveDirection = moveDirection.normalized;
 	    moveDirection *= Input.GetKey(KeyCode.LeftShift) ? SprintSpeed : WalkSpeed;
