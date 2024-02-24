@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class LibraryEnemy : MonoBehaviour
@@ -19,6 +20,8 @@ public class LibraryEnemy : MonoBehaviour
     
     public float hideForSeconds = 1;
     public float huntFreezeTime = 5;
+    public float getTargetTime = 0.5f;
+    [FormerlySerializedAs("loseTargetTime")] public float loseTargetTicks = 5;
     
     public Color huntColor = Color.red;
     public Color scaredColor = Color.blue;
@@ -27,6 +30,8 @@ public class LibraryEnemy : MonoBehaviour
     private float _scaredTimer;
     private float _huntFreezeTimer;
     private bool _isHunting;
+    private float _getTargetCounter;
+    private float _loseTargetTickCounter;
     
     private NavMeshAgent _agent;
     private GameObject[] _players;
@@ -60,6 +65,16 @@ public class LibraryEnemy : MonoBehaviour
         if (huntSound.enabled)
             huntSound.enabled = false;
         
+        if (_loseTargetTickCounter > loseTargetTicks)
+        {
+            _currentTarget = null;
+            _loseTargetTickCounter = 0;
+        }
+        
+        if (_getTargetCounter > 0)
+            Debug.Log(_getTargetCounter);
+        
+        
         Debug.DrawLine(transform.position, _agent.destination, Color.blue);
         
         if (_players.Length < 1) return;
@@ -80,7 +95,8 @@ public class LibraryEnemy : MonoBehaviour
                 _huntFreezeTimer -= Time.deltaTime;
                 _isHunting = true;
                 // Visually vibrate a bit
-                _renderer.gameObject.transform.position = transform.position + Random.insideUnitSphere * 0.1f;
+                var vibratedPos = transform.position + Random.insideUnitSphere * 0.1f;
+                _renderer.gameObject.transform.position = vibratedPos;
                 _light.color = huntColor;
                 return;
             }
@@ -93,8 +109,7 @@ public class LibraryEnemy : MonoBehaviour
             _agent.speed = huntSpeed;
             _agent.SetDestination(_currentTarget.transform.position);
 
-            Debug.Log(_agent.path.status);
-            if (_agent.path.status == NavMeshPathStatus.PathPartial) _isHunting = false;
+            if (_agent.path.status == NavMeshPathStatus.PathPartial) _loseTargetTickCounter += 1;
             return;
         }
         
@@ -114,6 +129,7 @@ public class LibraryEnemy : MonoBehaviour
         _spottedBy = _players.FirstOrDefault(player => HasBeenSpottedBy(player.GetComponent<PlayerController>()));
         if (_spottedBy is not null)
         {
+            // If we're found, the player will be our target next time we're not scared
             _currentTarget = _spottedBy.GetComponent<PlayerController>();
             if (Vector3.Distance(transform.position, _spottedBy.transform.position) < huntRange)
             {
@@ -135,13 +151,21 @@ public class LibraryEnemy : MonoBehaviour
         }
         
         // Check if we can get a new target
-        _currentTarget = GetVisible(_players)?.GetComponent<PlayerController>();
-        
+        var spottedTarget = GetVisible(_players)?.GetComponent<PlayerController>();
         // If we can't find any players, wander
-        if (_currentTarget is null)
+        if (spottedTarget is null)
         {
             Wander();
+            return;
         }
+        // If we see someone, tick up the counter for each frame they are visible, if above a certain threshold, set them as the target
+        if (_getTargetCounter < getTargetTime)
+        {
+            _getTargetCounter += Time.deltaTime;
+            return;
+        }
+        _currentTarget = spottedTarget;
+        _getTargetCounter = 0;
     }
     
     private void OnTriggerEnter(Collider other)
@@ -155,7 +179,6 @@ public class LibraryEnemy : MonoBehaviour
         _huntFreezeTimer = 0;
     }
     
-
     private void Wander()
     {
         _agent.speed = wanderSpeed;
@@ -173,6 +196,7 @@ public class LibraryEnemy : MonoBehaviour
     {
         _agent.speed = stalkSpeed;
         _agent.SetDestination(_currentTarget.transform.position);
+        if (_agent.path.status == NavMeshPathStatus.PathPartial) _loseTargetTickCounter += 1;
     }
     
     private void HideFrom(Vector3 position)
@@ -246,7 +270,7 @@ public class LibraryEnemy : MonoBehaviour
     
     private GameObject GetVisible(GameObject[] targets)
     {
-        foreach (GameObject target in targets){
+        foreach (var target in targets){
             if (CanISee(target)){
                 return target;
             }

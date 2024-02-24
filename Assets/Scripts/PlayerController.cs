@@ -87,7 +87,7 @@ public class PlayerController : NetworkBehaviour
 	public AudioSource playerAudioSource;
 	public AudioSource footstepSource;
 	public Light flashlight;
-	public NetworkVariable<bool> flashlightEnabled = new NetworkVariable<bool>( false, 
+	public NetworkVariable<bool> flashlightEnabled = new( false, 
 		NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
 	
 	private Slider _staminaSlider;
