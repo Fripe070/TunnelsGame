@@ -148,11 +148,8 @@ public class PlayerController : NetworkBehaviour
         
         RandomiseHue();
         
-#if UNITY_EDITOR
-        var initialSpawn = GameObject.FindGameObjectWithTag("Spawnpoint").transform.position;
-        if (IsOwner) transform.position = initialSpawn;
-        spawnPosition = initialSpawn;
-#endif
+        if (IsOwner) transform.position = spawnPosition;
+	    
 	    // _nametag.text = NetworkManager.Singleton.LocalClient.ClientId == NetworkObjectId ? "You" : "Player " + NetworkObjectId;
     }
 
@@ -461,6 +458,9 @@ public class PlayerController : NetworkBehaviour
         Gizmos.DrawSphere(
             new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z),
             GroundedRadius);
+        
+        Gizmos.color = Color.white;
+        Gizmos.DrawSphere(spawnPosition, 0.25f);
 
         Vector3 endPointPosition = cameraPosition + interactionDistance * CinemachineCameraTarget.transform.forward;
         DrawWireCapsule(cameraPosition, endPointPosition, interactionRadius, Color.red);

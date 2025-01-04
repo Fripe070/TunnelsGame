@@ -274,7 +274,7 @@ MonoBehaviour:
   WalkSpeed: 4
   SprintSpeed: 9
   ExhaustedSpeed: 2
-  spawnPosition: {x: 0, y: 0, z: 0}
+  spawnPosition: {x: 0, y: 25.265, z: 218}
   RotationSpeed: 2
   SpeedChangeRate: 10
   MaxHealth: 100
